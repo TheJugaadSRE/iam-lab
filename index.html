@@ -9,7 +9,7 @@
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -102,7 +102,7 @@
 
         <div class="metagrid">
           <div><i>&gt;_</i><span><b>Difficulty</b> Easy</span></div>
-          <div><i>⏳</i><span><b>Time</b> ~75 min</span></div>
+          <div><i>⏳</i><span><b>Time</b> ~90 min</span></div>
           <div><i>$</i><span><b>Cost</b> Free tier</span></div>
           <div><i>☁</i><span><b>Region</b> ap-south-1</span></div>
         </div>
@@ -110,7 +110,7 @@
         <div class="sumhead"><span>⚡</span><h3>30 second Summary</h3></div>
         <p class="big">In AWS, a <b>user</b> is a person or a program that can do things in the cloud, just like you right now.</p>
         <p class="big">Today we'll use <span class="term">AWS Identity and Access Management (IAM)</span> to control who is signed in and what they're allowed to do.</p>
-        <p class="big">We'll launch two <span class="term">EC2 instances</span> (lab and prod), then give an intern access to <i>only</i> the lab one by writing <span class="term">IAM policies</span>, and finish by trying to break our own setup.</p>
+        <p class="big">We'll launch two <span class="term">EC2 instances</span> (lab and prod), then build access step by step: a <span class="term">user</span>, a <span class="term">policy</span>, a <span class="term">group</span>, <span class="term">MFA</span> on your phone, and a temporary <span class="term">role</span>. After every step you'll <b>log in as that person and prove it works</b>.</p>
 
         <div class="figure"><svg viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" role="img" aria-label="IAM user group attached to a policy that allows the lab instance and denies the prod instance">
   <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#2a2623" stroke-width="1.6"/></marker>
@@ -146,7 +146,7 @@
 
         <p><b>Get ready to create (and learn from scratch):</b></p>
         <ul class="skills">
-          <li>💻 EC2 instances</li><li>📐 IAM policies</li><li>🏷 Resource tags</li><li>🪪 AWS account alias</li><li>👥 IAM users and user groups</li><li>🕵️ Policy Simulator</li>
+          <li>💻 EC2 instances and tags</li><li>👤 IAM users, and the "deny by default" rule</li><li>📐 IAM policies (JSON) and user groups</li><li>📱 MFA with the authenticator app on your phone</li><li>🎭 IAM roles: temporary access</li><li>🕵️ Policy Simulator</li>
         </ul>
 
         <div class="scenario"><b>The story.</b> You've just joined <b>Jugaad Corp</b> as the first SRE. An intern, <b>Ishaan</b>, starts Monday. Your manager says: "He needs to restart the lab server. He must never touch production." Your job: make that sentence true in AWS.</div>
@@ -169,10 +169,10 @@
 
       <!-- ===== 1 EC2 ===== -->
       <section class="module" id="m1" data-title="Launch EC2 instances">
-        <span class="tag">Module 1</span>
+        <span class="tag">Module 1 · Build the thing to protect</span>
         <h2>Launch two EC2 instances</h2>
-        <div class="scenario">Jugaad Corp has a <b>lab</b> server where experiments happen and a <b>prod</b> server that customers use. You're launching both so you have something to protect.</div>
-        <div class="goal"><b>In this module you'll:</b><ul><li>Launch an instance called <span class="inl">jugaad-lab-server</span> tagged <span class="inl">Env=lab</span></li><li>Launch an instance called <span class="inl">jugaad-prod-server</span> tagged <span class="inl">Env=prod</span></li></ul></div>
+        <div class="scenario">Jugaad Corp has a <b>lab</b> server where experiments happen and a <b>prod</b> server that customers use. Everything we do next exists to protect these two.</div>
+        <div class="goal"><b>By the end of this module you'll have:</b><ul><li><span class="inl">jugaad-lab-server</span> tagged <span class="inl">Env=lab</span></li><li><span class="inl">jugaad-prod-server</span> tagged <span class="inl">Env=prod</span></li><li>Proof, as admin, that you can control both (our baseline)</li></ul></div>
 
         <div class="concept"><h4>What is EC2?</h4>
           <p><b>EC2</b> = <b>E</b>lastic <b>C</b>ompute <b>C</b>loud (two C's, hence EC2). It rents you virtual computers ("instances") by the second. You choose the OS, CPU, memory, and AWS runs it in a data centre.</p>
@@ -217,28 +217,78 @@
             <tr><td>SSH from "My IP"</td><td>OK if you really need SSH.</td></tr></table></div></div></div>
         <div class="task"><input type="checkbox" id="t1g" data-task><label for="t1g">Storage: leave default (8 GiB gp3) → <b>Launch instance</b></label>
           <div class="detail"><p><b>gp3</b> is the current general-purpose SSD volume. Default is fine; bigger disks cost more.</p></div></div>
-        <div class="check">The green "Successfully initiated launch of instance" banner appears. Click the instance ID to open it.</div>
 
         <h3>Launch instance #2 (prod)</h3>
         <div class="task"><input type="checkbox" id="t1h" data-task><label for="t1h">Repeat with name <span class="inl">jugaad-prod-server</span> and tag <span class="inl">Env</span> = <span class="inl">prod</span></label>
           <div class="detail"><p>Same AMI, type, no key pair. Only the name and tag value change.</p></div></div>
-        <div class="task"><input type="checkbox" id="t1i" data-task><label for="t1i">Wait until both show <b>Running</b> with <b>2/2 checks passed</b>; note both Instance IDs</label></div>
-        <div class="check">Two instances, tagged differently: <span class="inl">Env=lab</span> and <span class="inl">Env=prod</span>.</div>
+        <div class="task"><input type="checkbox" id="t1i" data-task><label for="t1i">Wait until both show <b>Running</b> with <b>2/2 checks passed</b></label></div>
+
+        <h3 class="prove">🎯 Prove it: you, the admin, can control both</h3>
+        <div class="task"><input type="checkbox" id="t1j" data-task><label for="t1j">In the Instances search box type <span class="inl">tag:Env=lab</span> and press Enter. Only the lab server should remain</label>
+          <div class="detail"><p>That's exactly how IAM will "see" your tag later. Clear the filter, then try <span class="inl">tag:Env=prod</span>.</p></div></div>
+        <div class="task"><input type="checkbox" id="t1k" data-task><label for="t1k">Select <span class="inl">jugaad-lab-server</span> → <b>Instance state → Stop instance</b> → wait for <b>Stopped</b> → <b>Start instance</b> again</label>
+          <div class="detail"><p>It worked because you're an admin. <b>Remember this feeling</b>: in the next modules an intern will try the same click and AWS will say no.</p></div></div>
+        <div class="check">Two tagged instances, and you've seen that an admin can stop and start both. This is our baseline.</div>
         <details class="stuck"><summary>Feeling stuck? Common problems</summary>
           <ul><li><b>Can't find "Launch instances":</b> make sure you're in EC2 → Instances, not "Dashboard".</li><li><b>Instance type not available:</b> pick another micro/small the console lists.</li><li><b>Vcpu limit error:</b> new accounts have low limits. Try another region or ask AWS Support to raise it.</li></ul></details>
       </section>
 
-      <!-- ===== 2 POLICY ===== -->
-      <section class="module" id="m2" data-title="Create an IAM policy">
-        <span class="tag">Module 2</span>
-        <h2>Create an IAM policy</h2>
-        <div class="scenario">Time to turn your manager's sentence into JSON: "restart lab, never touch prod".</div>
-        <div class="goal"><b>In this module you'll:</b><ul><li>Understand what a policy is and how it's structured</li><li>Create a customer-managed policy called <span class="inl">JugaadLabOperator</span></li></ul></div>
+      <!-- ===== 2 ALIAS + INTERN ===== -->
+      <section class="module" id="m2" data-title="Create a user & see DENY">
+        <span class="tag">Module 2 · Users</span>
+        <h2>Create a user and meet "implicit deny"</h2>
+        <div class="scenario">Intern Ishaan starts Monday. You create his account first, and before giving him anything, you check what a brand-new user can do.</div>
+        <div class="goal"><b>By the end of this module you'll have:</b><ul><li>A friendly sign-in URL (account alias)</li><li>User <span class="inl">jugaad-intern</span></li><li>Seen, from his login, that a new user can do <b>nothing</b></li></ul></div>
+
+        <div class="concept"><h4>What is an account alias?</h4><p>A nickname for your AWS account that becomes part of your users' sign-in URL: <span class="inl">https://&lt;alias&gt;.signin.aws.amazon.com/console</span> instead of the 12-digit account number. Easier to remember, share and trust.</p>
+          <p class="mini">Rules: 3–63 characters, lowercase letters, digits, hyphens; must be unique across all of AWS.</p></div>
+        <div class="task"><input type="checkbox" id="t2a" data-task><label for="t2a">IAM → <b>Dashboard</b> → right side <b>Account Alias</b> → <b>Create</b></label>
+          <div class="detail"><p>Try <span class="inl">jugaad-corp-&lt;your-name&gt;-&lt;digits&gt;</span>. If it's taken, tweak it. Copy the <b>Sign-in URL for IAM users</b> into a notepad.</p></div></div>
+
+        <div class="concept"><h4>What is an IAM user?</h4><p>A person or app inside your AWS account, with its own name and long-term credentials (a password, and optionally access keys). By itself a user can do nothing; permissions are given separately.</p></div>
+        <div class="options"><h4>Users, groups, roles: what's the difference?</h4>
+          <table><tr><th>Identity</th><th>Is…</th><th>Use for</th></tr>
+            <tr class="pick"><td>User</td><td>A person/app with long-term credentials</td><td>Individual humans (in small setups)</td></tr>
+            <tr><td>Group</td><td>A collection of users sharing permissions</td><td>Teams: "operators", "viewers"</td></tr>
+            <tr><td>Role</td><td>An identity you <i>assume</i> temporarily, no password</td><td>Servers, apps, cross-account, short elevated access (Module 6)</td></tr></table></div>
+
+        <h3>Create the intern</h3>
+        <div class="task"><input type="checkbox" id="t2b" data-task><label for="t2b">IAM → <b>Users</b> → <b>Create user</b> → name <span class="inl">jugaad-intern</span> → tick <b>Provide user access to the AWS Management Console</b></label>
+          <div class="detail">
+          <div class="options"><h4>Options &amp; what to choose</h4><table><tr><th>Choice</th><th>Notes</th></tr>
+            <tr class="pick"><td>"I want to create an IAM user"</td><td>Fine for a lab; simple.</td></tr>
+            <tr><td>"Specify a user in Identity Center"</td><td>AWS-recommended for real companies (SSO, temp credentials). Needs an Organization setup.</td></tr>
+            <tr><td>Custom password</td><td>Type one now (we'll share it in-room). "Autogenerated" is better in real life.</td></tr>
+            <tr><td>"Users must create a new password at next sign-in"</td><td>Best practice in real life. Untick for today to save time.</td></tr></table></div></div></div>
+        <div class="task"><input type="checkbox" id="t2c" data-task><label for="t2c">Permissions screen: choose <b>Add user to group</b> but <b>do not tick any group</b> → Next → <b>Create user</b></label>
+          <div class="detail"><div class="options"><h4>Options &amp; what to choose</h4><table><tr><th>Option</th><th>Use</th></tr>
+            <tr class="pick"><td>Add user to group</td><td>Always the default choice. Scales to hundreds of users. (We'll add him to a group in Module 3.)</td></tr>
+            <tr><td>Copy permissions</td><td>Clone an existing user; carries all their oddities along</td></tr>
+            <tr><td>Attach policies directly</td><td>One-offs only; becomes unmanageable fast</td></tr></table></div></div></div>
+        <div class="task"><input type="checkbox" id="t2d" data-task><label for="t2d">Save the password and sign-in URL (download .csv or copy)</label>
+          <div class="detail"><p>This is the <b>only time</b> AWS shows the password. Lost? An admin can reset it, but nobody can read it.</p></div></div>
+
+        <h3 class="prove">🎯 Prove it: log in as the intern</h3>
+        <div class="task"><input type="checkbox" id="t2e" data-task><label for="t2e">In your <b>incognito window</b> open the alias sign-in URL and log in as <span class="inl">jugaad-intern</span></label>
+          <div class="detail"><p>Account = your alias (pre-filled), IAM user name <span class="inl">jugaad-intern</span>, your password. Set the region to ap-south-1.</p></div></div>
+        <div class="task"><input type="checkbox" id="t2f" data-task><label for="t2f">Open <b>EC2 → Instances</b> as the intern</label>
+          <div class="detail"><p>You'll see red <b>"You are not authorized to perform…"</b> messages, and no instances. Click <b>Instance state</b> on anything you can find: nothing works.</p>
+          <details class="hint"><summary>Reading the error message</summary><p>It tells you <b>who</b> (the user ARN), <b>what</b> (e.g. ec2:DescribeInstances) and <b>why</b> ("no identity-based policy allows" = implicit deny). This message is your best debugging friend.</p></details></div></div>
+        <div class="check">The intern can log in but can do nothing. AWS is <b>deny by default</b>. Keep this incognito window open: you'll refresh it after each module.</div>
+        <div class="callout sre"><b class="t">SRE note</b><p>Real teams: SSO (IAM Identity Center) + roles, short-lived credentials, MFA everywhere. IAM users make the concepts visible today.</p></div>
+      </section>
+
+      <!-- ===== 3 POLICY + GROUP ===== -->
+      <section class="module" id="m3" data-title="Policy + group = access">
+        <span class="tag">Module 3 · Policies &amp; groups</span>
+        <h2>Write a policy, attach it, watch ALLOW and DENY appear</h2>
+        <div class="scenario">Time to turn your manager's sentence into JSON: "restart lab, never touch prod". Then test it on Ishaan, live.</div>
+        <div class="goal"><b>By the end of this module you'll have:</b><ul><li>Policy <span class="inl">JugaadLabOperator</span></li><li>Group <span class="inl">jugaad-operators</span> containing the intern</li><li>Proof the intern can stop lab but not prod</li></ul></div>
 
         <h3>What do IAM Policies do?</h3>
         <p>An IAM policy is a written rule that says <b>who can do what</b> with your AWS resources. Every time someone tries to start a server, open a bucket or read a secret, AWS checks the policies that apply to them and answers ALLOW or DENY.</p>
         <p>On their own, policies do nothing. They only take effect once they are <b>attached</b> to a user, a user group or a role. Attach one to a group and everyone in that group gets the same rules.</p>
-        <p>Without any policy, the answer is always DENY. That's why a brand-new user can't do anything yet.</p>
+        <p>Without any policy, the answer is always DENY. That's exactly what you saw in the last module.</p>
 
         <div class="options"><h4>Types of policy: what to choose</h4><table>
           <tr><th>Type</th><th>What it is</th><th>When</th></tr>
@@ -246,9 +296,9 @@
           <tr class="pick"><td>Customer managed</td><td>You write it, reusable on many identities, versioned</td><td>Our pick: precise and reusable</td></tr>
           <tr><td>Inline</td><td>Embedded in one single user/group/role</td><td>Rare one-offs; hard to audit</td></tr></table></div>
 
-        <h3>Create it</h3>
-        <div class="task"><input type="checkbox" id="t2a" data-task><label for="t2a">Search <b>IAM</b> → <b>Policies</b> → <b>Create policy</b></label></div>
-        <div class="task"><input type="checkbox" id="t2b" data-task><label for="t2b">Switch the editor from <b>Visual</b> to <b>JSON</b>, delete the sample, and paste this</label>
+        <h3>Create the policy</h3>
+        <div class="task"><input type="checkbox" id="t3a" data-task><label for="t3a">Search <b>IAM</b> → <b>Policies</b> → <b>Create policy</b></label></div>
+        <div class="task"><input type="checkbox" id="t3b" data-task><label for="t3b">Switch the editor from <b>Visual</b> to <b>JSON</b>, delete the sample, and paste this</label>
           <div class="detail">
             <div class="options"><h4>Visual vs JSON editor</h4><table><tr><th>Mode</th><th>Pick when</th></tr>
               <tr><td>Visual</td><td>Learning, small policies, you want dropdowns</td></tr>
@@ -281,9 +331,9 @@
               <p>Nothing grants terminate, create or delete, so those stay denied by default.</p></details></div></div>
         <div class="callout sre"><b class="t">What are we doing right now?</b>
           <p>We're writing the rule in JSON, the format AWS stores every policy in. The pasted policy has two statements: one lets people <i>see</i> EC2 resources, the other lets them <i>start and stop</i> only the instances tagged <span class="inl">Env=lab</span>. Nothing else is granted, so prod stays untouched.</p></div>
-        <div class="task"><input type="checkbox" id="t2c" data-task><label for="t2c"><b>Next</b> → Policy name <span class="inl">JugaadLabOperator</span> → <b>Create policy</b></label>
-          <div class="detail"><p>Add a description like "Start/stop Env=lab EC2 only" — future you will thank you.</p></div></div>
-        <div class="check">You see "Policy JugaadLabOperator created" and it appears in the list as <b>Customer managed</b>.</div>
+        <div class="task"><input type="checkbox" id="t3c" data-task><label for="t3c"><b>Next</b> → Policy name <span class="inl">JugaadLabOperator</span> → <b>Create policy</b></label>
+          <div class="detail"><p>Add a description like "Start/stop Env=lab EC2 only". Future you will thank you.</p></div></div>
+
         <h3>Extra for Experts: how are JSON policies structured?</h3>
         <p>Let's unpack the policy you just pasted. Every policy is built from the same few pieces:</p>
         <p><b>Version</b><br>The policy language version. It's always <span class="inl">2012-10-17</span>, the current one.</p>
@@ -293,113 +343,171 @@
         <p><b>Resource</b><br>What the rule applies to, written as an ARN (Amazon Resource Name). A single <span class="inl">*</span> means everything. Ours points at EC2 instances only.</p>
         <p><b>Condition (optional)</b><br>An extra "only if" test. Ours checks the instance tag, so the rule applies only when <span class="inl">Env</span> equals <span class="inl">lab</span>. Conditions can also check IP address, time of day or whether MFA was used.</p>
 
-        <details class="stuck"><summary>Feeling stuck? JSON errors</summary><ul><li>Red marker in the editor = a missing comma/bracket. Re-copy the block with the Copy button.</li><li>Use the <b>Security / Errors / Warnings</b> tabs under the editor, they explain problems in plain English.</li></ul></details>
-      </section>
+        <h3>Attach it through a group</h3>
+        <div class="concept"><h4>What is a user group?</h4><p>A collection of users that share the same permissions. You attach policies to the <b>group</b>, then add people. When someone changes team you move them, you don't rewrite policies.</p></div>
+        <div class="task"><input type="checkbox" id="t3d" data-task><label for="t3d">IAM → <b>User groups</b> → <b>Create group</b> → name <span class="inl">jugaad-operators</span></label></div>
+        <div class="task"><input type="checkbox" id="t3e" data-task><label for="t3e">Add user <span class="inl">jugaad-intern</span> and attach policy <span class="inl">JugaadLabOperator</span> → <b>Create user group</b></label></div>
 
-      <!-- ===== 3 ALIAS ===== -->
-      <section class="module" id="m3" data-title="Create an account alias">
-        <span class="tag">Module 3</span>
-        <h2>Create an AWS account alias</h2>
-        <div class="goal"><b>In this module you'll:</b><ul><li>Swap the ugly 12-digit sign-in URL for a friendly one</li></ul></div>
-        <div class="concept"><h4>What is an account alias?</h4><p>A nickname for your AWS account that becomes part of your users' sign-in URL: <span class="inl">https://&lt;alias&gt;.signin.aws.amazon.com/console</span> instead of <span class="inl">https://123456789012.signin…</span>. Easier to remember, share and trust.</p>
-          <p class="mini">Rules: 3–63 characters, lowercase letters, digits, hyphens; must be unique across all of AWS.</p></div>
-        <div class="task"><input type="checkbox" id="t3a" data-task><label for="t3a">IAM → <b>Dashboard</b> → right side <b>Account Alias</b> → <b>Create</b></label>
-          <div class="detail"><p>Try <span class="inl">jugaad-corp-&lt;your-name&gt;-&lt;random digits&gt;</span>. If it's taken, tweak it.</p></div></div>
-        <div class="task"><input type="checkbox" id="t3b" data-task><label for="t3b">Copy the new <b>Sign-in URL for IAM users</b> into a notepad</label></div>
-        <div class="check">The IAM dashboard shows your alias URL.</div>
-      </section>
-
-      <!-- ===== 4 USERS & GROUPS ===== -->
-      <section class="module" id="m4" data-title="Users & user groups">
-        <span class="tag">Module 4</span>
-        <h2>Create IAM users and user groups</h2>
-        <div class="scenario">Ishaan's laptop arrives Monday. He gets an account that can only run the lab server. A second colleague, <b>Viewer Vidya</b>, only needs to look.</div>
-        <div class="goal"><b>In this module you'll:</b><ul><li>Create group <span class="inl">jugaad-operators</span> with your custom policy</li><li>Create group <span class="inl">jugaad-viewers</span> with a managed read-only policy</li><li>Create users <span class="inl">jugaad-intern</span> and <span class="inl">jugaad-viewer</span></li></ul></div>
-
-        <div class="concept"><h4>Users, groups, roles: what's the difference?</h4>
-          <table class="ad" style="margin-top:.4rem"><tr><th>Identity</th><th>Is…</th><th>Use for</th></tr>
-            <tr><td>User</td><td>A person/app with long-term credentials</td><td>Individual humans (in small setups)</td></tr>
-            <tr><td>Group</td><td>A collection of users sharing permissions</td><td>Teams: "operators", "viewers"</td></tr>
-            <tr><td>Role</td><td>An identity you <i>assume</i> temporarily, no password</td><td>Servers, apps, cross-account, federation (best practice)</td></tr></table>
-          <p class="ana">Rule of thumb: permissions go on <b>groups</b>, people go into groups. When Ishaan changes team you move him, you don't rewrite policies.</p></div>
-
-        <h3>4.1 Create the groups</h3>
-        <div class="task"><input type="checkbox" id="t4a" data-task><label for="t4a">IAM → <b>User groups</b> → <b>Create group</b> → name <span class="inl">jugaad-operators</span> → attach <span class="inl">JugaadLabOperator</span> → Create</label></div>
-        <div class="task"><input type="checkbox" id="t4b" data-task><label for="t4b">Create group <span class="inl">jugaad-viewers</span> → attach AWS managed <span class="inl">AmazonEC2ReadOnlyAccess</span></label></div>
-
-        <h3>4.2 Create the users</h3>
-        <div class="task"><input type="checkbox" id="t4c" data-task><label for="t4c">IAM → <b>Users</b> → <b>Create user</b> → name <span class="inl">jugaad-intern</span></label>
-          <div class="detail"><p>Tick <b>Provide user access to the AWS Management Console</b>.</p>
-          <div class="options"><h4>Options &amp; what to choose</h4><table><tr><th>Choice</th><th>Notes</th></tr>
-            <tr class="pick"><td>"I want to create an IAM user"</td><td>Fine for a lab; simple.</td></tr>
-            <tr><td>"Specify a user in Identity Center"</td><td>AWS-recommended for real companies (SSO, temp credentials). Needs an Organization setup.</td></tr>
-            <tr><td>Custom password</td><td>Type one now (we'll share it in-room). "Autogenerated" is better in real life.</td></tr>
-            <tr><td>"Users must create a new password at next sign-in"</td><td>Best practice in real life. Untick for today to save time.</td></tr></table></div></div></div>
-        <div class="task"><input type="checkbox" id="t4d" data-task><label for="t4d">Set permissions → <b>Add user to group</b> → tick <span class="inl">jugaad-operators</span> → Next → <b>Create user</b></label>
-          <div class="detail"><div class="options"><h4>Options &amp; what to choose</h4><table><tr><th>Option</th><th>Use</th></tr>
-            <tr class="pick"><td>Add user to group</td><td>Always the default choice. Scales to hundreds of users.</td></tr>
-            <tr><td>Copy permissions</td><td>Clone an existing user; carries all their oddities along</td></tr>
-            <tr><td>Attach policies directly</td><td>One-offs only; becomes unmanageable fast</td></tr></table></div></div></div>
-        <div class="task"><input type="checkbox" id="t4e" data-task><label for="t4e">Create a second user <span class="inl">jugaad-viewer</span> in group <span class="inl">jugaad-viewers</span></label></div>
-        <div class="task"><input type="checkbox" id="t4f" data-task><label for="t4f">Save both passwords and the sign-in URL (download .csv or copy)</label>
-          <div class="detail"><p>This is the <b>only time</b> AWS shows the password. Lost? Admin can reset it, but nobody can read it.</p></div></div>
-        <div class="check">Under IAM → User groups, <span class="inl">jugaad-operators</span> shows 1 user and 1 policy; <span class="inl">jugaad-viewers</span> shows 1 user and 1 policy.</div>
-        <div class="callout sre"><b class="t">SRE note</b><p>Real teams: SSO (IAM Identity Center) + roles, short-lived credentials, MFA everywhere. IAM users make the concepts visible today.</p></div>
-      </section>
-
-      <!-- ===== 5 TEST ===== -->
-      <section class="module" id="m5" data-title="Test ALLOW vs DENY">
-        <span class="tag">Module 5 · The fun part</span>
-        <h2>Test your intern's access</h2>
-        <div class="scenario">Monday morning. Ishaan logs in. Does the system behave like your manager promised?</div>
-        <div class="goal"><b>In this module you'll:</b><ul><li>Predict each result before you click</li><li>Log in as each user and verify</li></ul></div>
-
+        <h3 class="prove">🎯 Prove it: the intern's new powers</h3>
+        <div class="task"><input type="checkbox" id="t3f" data-task><label for="t3f">In the incognito window <b>refresh</b> EC2 → Instances as <span class="inl">jugaad-intern</span> (wait ~30 seconds if it still errors)</label>
+          <div class="detail"><p>The red errors disappear and you now see both servers. <span class="pill a">ALLOW</span> View.</p></div></div>
+        <div class="task"><input type="checkbox" id="t3g" data-task><label for="t3g">Stop <span class="inl">jugaad-lab-server</span> as the intern</label>
+          <div class="detail"><p><b>Instance state → Stop instance</b> works. <span class="pill a">ALLOW</span> Stop lab. (Start it again.)</p></div></div>
+        <div class="task"><input type="checkbox" id="t3h" data-task><label for="t3h">Now try to stop <span class="inl">jugaad-prod-server</span></label>
+          <div class="detail"><p>Red banner: <i>"You are not authorized to perform: ec2:StopInstances"</i>. <span class="pill d">DENY</span> Stop prod. Same user, same action, different tag.</p></div></div>
+        <div class="task"><input type="checkbox" id="t3i" data-task><label for="t3i">Try <b>Instance state → Terminate</b> on the lab server, then open the S3 console</label>
+          <div class="detail"><p>Both <span class="pill d">DENY</span>. Nobody granted those actions, so the default applies.</p></div></div>
+        <div class="task"><input type="checkbox" id="t3j" data-task><label for="t3j"><b>Tag experiment:</b> as admin change the lab server's <span class="inl">Env</span> tag to <span class="inl">dev</span>. Retry Stop as the intern, then change it back to <span class="inl">lab</span></label>
+          <div class="detail"><p>Same user, same policy, different tag → DENY. That's tag-based access control (ABAC) in action.</p></div></div>
         <div class="concept"><h4>How AWS decides: ALLOW vs DENY</h4>
           <div class="flow"><div>Request arrives</div>→<div>Any matching explicit <b>Deny</b>?</div>→<div class="x">Yes → DENY</div><div>No →</div><div>Any matching <b>Allow</b>?</div>→<div class="y">Yes → ALLOW</div><div class="x">No → implicit DENY</div></div>
-          <p><b>Power order:</b> explicit Deny &gt; Allow &gt; implicit Deny (the default for everything not allowed).</p></div>
-
-        <h3>Predict first</h3>
-        <div class="tablewrap"><table class="ad">
-          <tr><th>#</th><th>Sign in as</th><th>Action</th><th>Your guess</th><th>Reality</th></tr>
-          <tr><td>1</td><td>jugaad-intern</td><td>View EC2 → Instances</td><td>?</td><td><span class="pill a">ALLOW</span></td></tr>
-          <tr><td>2</td><td>jugaad-intern</td><td>Stop <b>lab</b> server</td><td>?</td><td><span class="pill a">ALLOW</span></td></tr>
-          <tr><td>3</td><td>jugaad-intern</td><td>Stop <b>prod</b> server</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
-          <tr><td>4</td><td>jugaad-intern</td><td>Terminate lab server</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
-          <tr><td>5</td><td>jugaad-viewer</td><td>View instances</td><td>?</td><td><span class="pill a">ALLOW</span></td></tr>
-          <tr><td>6</td><td>jugaad-viewer</td><td>Stop lab server</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
-          <tr><td>7</td><td>jugaad-intern</td><td>Open S3 or IAM console</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
-        </table></div>
-
-        <h3>Run the tests</h3>
-        <div class="task"><input type="checkbox" id="t5a" data-task><label for="t5a">In the incognito window open your alias sign-in URL and log in as <span class="inl">jugaad-intern</span></label>
-          <div class="detail"><p>Account = your alias (pre-filled), IAM user name, password. Set the region to ap-south-1.</p></div></div>
-        <div class="task"><input type="checkbox" id="t5b" data-task><label for="t5b">Tests 1–3: view instances, stop the lab server, then try to stop the prod server</label>
-          <div class="detail"><p>Lab: <b>Instance state → Stop instance</b> works. Prod: red banner <i>"You are not authorized to perform: ec2:StopInstances … because no identity-based policy allows"</i>.</p>
-          <details class="hint"><summary>Reading the error message</summary><p>It tells you <b>who</b> (the user ARN), <b>what</b> (ec2:StopInstances), <b>on which resource</b>, and <b>why</b> ("no identity-based policy allows" = implicit deny). This message is your best debugging friend.</p></details></div></div>
-        <div class="task"><input type="checkbox" id="t5c" data-task><label for="t5c">Test 4: try <b>Instance state → Terminate</b> on the lab server</label></div>
-        <div class="task"><input type="checkbox" id="t5d" data-task><label for="t5d">Test 7: open the S3 and IAM consoles</label></div>
-        <div class="task"><input type="checkbox" id="t5e" data-task><label for="t5e">Sign out, log in as <span class="inl">jugaad-viewer</span>, run tests 5 and 6</label></div>
-        <div class="task"><input type="checkbox" id="t5f" data-task><label for="t5f"><b>Tag experiment:</b> as admin, change the lab server's tag <span class="inl">Env</span> from <span class="inl">lab</span> to <span class="inl">dev</span>; retry Stop as intern; then change it back</label>
-          <div class="detail"><p>Same user, same policy, different tag → DENY. That's tag-based access control (ABAC) in action.</p></div></div>
-        <div class="check">The intern controls only the lab server. Mission accomplished: "Never touch prod" is now enforced by AWS, not by trust.</div>
+          <p><b>Power order:</b> explicit Deny &gt; Allow &gt; implicit Deny (the default).</p></div>
+        <div class="check">The intern controls only the lab server. "Never touch prod" is now enforced by AWS, not by trust.</div>
         <details class="stuck"><summary>Feeling stuck? Lab stop is being denied</summary>
-          <ul><li>Tag key/value spelled differently? Must be exactly <span class="inl">Env</span>=<span class="inl">lab</span>.</li><li>Is the intern really in <span class="inl">jugaad-operators</span>? IAM → User groups → Users tab.</li><li>Did you attach <span class="inl">JugaadLabOperator</span> to the group? Check the Permissions tab.</li><li>Wait ~30 seconds after changes; IAM is eventually consistent.</li></ul></details>
+          <ul><li>Tag spelled differently? Must be exactly <span class="inl">Env</span>=<span class="inl">lab</span>.</li><li>Is the intern really in <span class="inl">jugaad-operators</span>? IAM → User groups → Users tab.</li><li>Is <span class="inl">JugaadLabOperator</span> on the group? Check the Permissions tab.</li><li>Red marker in the JSON editor = a missing comma/bracket. Re-copy with the Copy button.</li><li>Wait ~30 seconds after changes; IAM is eventually consistent.</li></ul></details>
       </section>
 
-      <!-- ===== 6 SECRET MISSION ===== -->
-      <section class="module" id="m6" data-title="Secret mission">
-        <span class="tag">Module 6 · Bonus</span>
-        <h2>🕵️ Secret mission</h2>
+      <!-- ===== 4 VIEWER ===== -->
+      <section class="module" id="m4" data-title="Read-only viewer">
+        <span class="tag">Module 4 · Managed policies</span>
+        <h2>Give a second user read-only access</h2>
+        <div class="scenario">Viewer Vidya in finance only needs to <i>look</i> at the servers. No need to write a policy: AWS already has a ready-made one.</div>
+        <div class="goal"><b>By the end of this module you'll have:</b><ul><li>Group <span class="inl">jugaad-viewers</span> using an AWS managed policy</li><li>User <span class="inl">jugaad-viewer</span></li><li>Proof that viewing works but even the lab server can't be stopped</li></ul></div>
+
+        <div class="task"><input type="checkbox" id="t4a" data-task><label for="t4a">IAM → <b>User groups</b> → <b>Create group</b> → name <span class="inl">jugaad-viewers</span> → attach AWS managed <span class="inl">AmazonEC2ReadOnlyAccess</span></label>
+          <div class="detail"><p>Notice: this time you didn't write JSON. AWS managed policies are quick, but often broader than you need. Open it and skim the JSON: it has no Start/Stop actions at all.</p></div></div>
+        <div class="task"><input type="checkbox" id="t4b" data-task><label for="t4b">Create user <span class="inl">jugaad-viewer</span> (console access, custom password) and add to <span class="inl">jugaad-viewers</span></label></div>
+
+        <h3 class="prove">🎯 Prove it: log in as the viewer</h3>
+        <div class="task"><input type="checkbox" id="t4c" data-task><label for="t4c">Sign the intern out, then log in to the incognito window as <span class="inl">jugaad-viewer</span></label></div>
+        <div class="task"><input type="checkbox" id="t4d" data-task><label for="t4d">View EC2 → Instances <span class="pill a">ALLOW</span>, then try to stop the <b>lab</b> server <span class="pill d">DENY</span></label>
+          <div class="detail"><p>The intern could stop lab; the viewer can't. Two users, two groups, two policies, two different results from the same screen.</p></div></div>
+        <div class="check">Viewer can look, can't touch.</div>
+      </section>
+
+      <!-- ===== 5 MFA ===== -->
+      <section class="module" id="m5" data-title="Secure the intern with MFA">
+        <span class="tag">Module 5 · MFA</span>
+        <h2>Lock the intern's login with MFA (use your phone)</h2>
+        <div class="scenario">Ishaan reuses passwords everywhere. If his password leaks, someone could stop your lab server. Let's make a stolen password useless by tying his login to a phone.</div>
+        <div class="goal"><b>By the end of this module you'll have:</b><ul><li>An MFA device on <span class="inl">jugaad-intern</span> using an authenticator app on <b>your phone</b></li><li>Logged in with password <i>and</i> the 6-digit code</li><li>Seen a wrong code get rejected</li></ul></div>
+
+        <div class="concept"><h4>What is MFA?</h4><p><b>Multi-Factor Authentication</b>: you prove who you are with two different things: something you <b>know</b> (password) and something you <b>have</b> (your phone generating a code that changes every 30 seconds). A leaked password alone is no longer enough.</p></div>
+        <div class="options"><h4>MFA options &amp; what to choose</h4><table><tr><th>Type</th><th>Notes</th></tr>
+          <tr class="pick"><td>Authenticator app (virtual MFA)</td><td>Free, takes a minute. Google Authenticator, Microsoft Authenticator, Authy. Our pick.</td></tr>
+          <tr><td>Passkey / security key (FIDO2)</td><td>Strongest, phishing-resistant. Needs a compatible device or hardware key.</td></tr>
+          <tr><td>Hardware TOTP token</td><td>A physical keyfob. Used by some regulated companies.</td></tr></table></div>
+
+        <h3>Set it up</h3>
+        <div class="task"><input type="checkbox" id="t5a" data-task><label for="t5a">Install an authenticator app on your phone (Google Authenticator or Microsoft Authenticator)</label></div>
+        <div class="task"><input type="checkbox" id="t5b" data-task><label for="t5b">As admin: IAM → <b>Users</b> → <span class="inl">jugaad-intern</span> → <b>Security credentials</b> → <b>Assign MFA device</b></label>
+          <div class="detail"><p>Device name <span class="inl">intern-phone</span> → choose <b>Authenticator app</b> → Next.</p></div></div>
+        <div class="task"><input type="checkbox" id="t5c" data-task><label for="t5c">Scan the QR code with the app on your phone</label>
+          <div class="detail"><p>A new entry "AWS … jugaad-intern" appears in your app with a 6-digit code.</p>
+          <details class="hint"><summary>Can't scan?</summary><p>Click <b>Show secret key</b> and type it into the app manually.</p></details></div></div>
+        <div class="task"><input type="checkbox" id="t5d" data-task><label for="t5d">Enter <b>two consecutive codes</b> (wait ~30 seconds for the second one) → <b>Add MFA</b></label>
+          <div class="detail"><p>AWS asks for two codes to confirm the clock on your phone and AWS agree.</p></div></div>
+
+        <h3 class="prove">🎯 Prove it: log in with the code</h3>
+        <div class="task"><input type="checkbox" id="t5e" data-task><label for="t5e">In the incognito window sign out, then start logging in as <span class="inl">jugaad-intern</span></label>
+          <div class="detail"><p>After the password a new screen asks for an <b>MFA code</b>. A thief with only the password stops here.</p></div></div>
+        <div class="task"><input type="checkbox" id="t5f" data-task><label for="t5f">Type a <b>wrong</b> code first (e.g. 000000)</label>
+          <div class="detail"><p>AWS rejects it. Now open your phone, read the real 6-digit code, and enter it before it refreshes.</p></div></div>
+        <div class="task"><input type="checkbox" id="t5g" data-task><label for="t5g">You're in as the intern. Stop the lab server once more to confirm permissions still work</label></div>
+        <div class="check">Logging in as the intern now needs <b>password + phone</b>. Permissions are unchanged. MFA only protects <i>who gets in</i>.</div>
+        <div class="callout jugaad"><b class="t">Jugaad tip</b><p>Do this for your own admin user too, and for the root user. In real companies you can even write policies that <i>deny everything unless MFA was used</i>, using the condition <span class="inl">aws:MultiFactorAuthPresent</span>.</p></div>
+      </section>
+
+      <!-- ===== 6 ROLE ===== -->
+      <section class="module" id="m6" data-title="Roles: temporary access">
+        <span class="tag">Module 6 · Roles</span>
+        <h2>Roles: borrow powers for an hour</h2>
+        <div class="scenario">Prod is on fire at 2 a.m. and Ishaan is the only one online. You don't want to give him permanent prod access, so you create a role he can <b>switch into</b> for a short time.</div>
+        <div class="goal"><b>By the end of this module you'll have:</b><ul><li>Policy + role <span class="inl">JugaadProdOperator</span></li><li>A permission letting the operators group assume that role</li><li>Proof: the intern stops prod while wearing the role, and is denied again after switching back</li></ul></div>
+
+        <div class="concept"><h4>What is an IAM role?</h4><p>An identity with permissions but <b>no password and no permanent keys</b>. Someone (or something) <b>assumes</b> it and receives temporary credentials that expire, 1 hour by default. A role has two parts: a <b>trust policy</b> (who may assume it) and <b>permission policies</b> (what it can do).</p>
+          <p class="ana">Analogy: a hotel master key card kept at reception. You borrow it for a while, do the job, hand it back.</p></div>
+        <div class="options"><h4>Who can assume a role: what to choose</h4><table><tr><th>Trusted entity</th><th>Use for</th></tr>
+          <tr><td>AWS service</td><td>EC2, Lambda etc. needing to call other AWS services</td></tr>
+          <tr class="pick"><td>AWS account (this account)</td><td>People in your account borrowing extra access. Our pick.</td></tr>
+          <tr><td>AWS account (another)</td><td>Cross-account access, partners</td></tr>
+          <tr><td>Web identity / SAML</td><td>Login with Google/Cognito or company SSO</td></tr></table></div>
+
+        <h3>Create the role's permissions</h3>
+        <div class="task"><input type="checkbox" id="t6a" data-task><label for="t6a">IAM → Policies → Create policy → JSON → paste → name <span class="inl">JugaadProdOperatorPolicy</span></label>
+          <div class="detail"><div class="code"><span class="fn">JugaadProdOperatorPolicy.json</span><button class="copy">Copy</button><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "ec2:Describe*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ec2:StartInstances", "ec2:StopInstances"],
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": {
+        "StringEquals": { "aws:ResourceTag/Env": "prod" }
+      }
+    }
+  ]
+}</code></pre></div>
+          <p>Same shape as before, only the tag value changed to <span class="inl">prod</span>.</p></div></div>
+        <div class="task"><input type="checkbox" id="t6b" data-task><label for="t6b">IAM → <b>Roles</b> → <b>Create role</b> → Trusted entity: <b>AWS account</b> → <b>This account</b> → Next</label></div>
+        <div class="task"><input type="checkbox" id="t6c" data-task><label for="t6c">Attach <span class="inl">JugaadProdOperatorPolicy</span> → name the role <span class="inl">JugaadProdOperator</span> → <b>Create role</b></label></div>
+
+        <h3>Let the operators group assume it</h3>
+        <div class="task"><input type="checkbox" id="t6d" data-task><label for="t6d">Find your 12-digit <b>Account ID</b> (top-right menu) and create a policy <span class="inl">JugaadAssumeProdRole</span> with this JSON</label>
+          <div class="detail"><div class="code"><span class="fn">JugaadAssumeProdRole.json</span><button class="copy">Copy</button><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "sts:AssumeRole",
+    "Resource": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/JugaadProdOperator"
+  }]
+}</code></pre></div>
+          <p>Replace <span class="inl">&lt;ACCOUNT_ID&gt;</span> with your number. <b>sts:AssumeRole</b> is the permission to "put on" a role.</p></div></div>
+        <div class="task"><input type="checkbox" id="t6e" data-task><label for="t6e">Attach <span class="inl">JugaadAssumeProdRole</span> to the <span class="inl">jugaad-operators</span> group</label></div>
+
+        <h3 class="prove">🎯 Prove it: wear the role</h3>
+        <div class="task"><input type="checkbox" id="t6f" data-task><label for="t6f">Log in as the intern (password + phone code). Confirm <b>stop prod</b> is still <span class="pill d">DENY</span></label></div>
+        <div class="task"><input type="checkbox" id="t6g" data-task><label for="t6g">Top-right menu → <b>Switch role</b> → Account = your ID or alias, Role = <span class="inl">JugaadProdOperator</span> → <b>Switch Role</b></label>
+          <div class="detail"><p>The top bar now shows the role name instead of the intern's name.</p></div></div>
+        <div class="task"><input type="checkbox" id="t6h" data-task><label for="t6h">Now stop <span class="inl">jugaad-prod-server</span>, then start it again <span class="pill a">ALLOW</span></label>
+          <div class="detail"><p>The intern just did what he was denied minutes ago, with <b>temporary</b> credentials and no change to his own permissions.</p></div></div>
+        <div class="task"><input type="checkbox" id="t6i" data-task><label for="t6i">Try to stop the <b>lab</b> server while in the role</label>
+          <div class="detail"><p><span class="pill d">DENY</span>. While you wear a role you give up your own permissions and have only the role's. Then use <b>Switch back</b> from the menu, and prod is denied again.</p></div></div>
+        <div class="check">Roles give powerful access that is temporary, auditable (CloudTrail logs who assumed it) and revocable.</div>
+        <details class="stuck"><summary>Feeling stuck? Switch role fails</summary>
+          <ul><li>"Not authorized to switch": check the policy is attached to the group and the Account ID and role name are exact.</li><li>Role name is case-sensitive: <span class="inl">JugaadProdOperator</span>.</li><li>Wait ~30 seconds after attaching the policy.</li></ul></details>
+      </section>
+
+      <!-- ===== 7 SCOREBOARD ===== -->
+      <section class="module" id="m7" data-title="Scoreboard & secret mission">
+        <span class="tag">Module 7 · Bonus</span>
+        <h2>🕵️ Scoreboard &amp; secret mission</h2>
+        <p class="why">You've already tested everything live. Here's the recap, plus the pro way to check permissions without logging in as anyone.</p>
+        <div class="tablewrap"><table class="ad">
+          <tr><th>Who</th><th>Action</th><th>Result</th></tr>
+          <tr><td>jugaad-intern (new, no group)</td><td>Anything</td><td><span class="pill d">DENY</span></td></tr>
+          <tr><td>jugaad-intern + operators</td><td>View / stop lab</td><td><span class="pill a">ALLOW</span></td></tr>
+          <tr><td>jugaad-intern + operators</td><td>Stop prod / terminate / S3</td><td><span class="pill d">DENY</span></td></tr>
+          <tr><td>jugaad-viewer</td><td>View</td><td><span class="pill a">ALLOW</span></td></tr>
+          <tr><td>jugaad-viewer</td><td>Stop lab</td><td><span class="pill d">DENY</span></td></tr>
+          <tr><td>intern wearing JugaadProdOperator</td><td>Stop prod</td><td><span class="pill a">ALLOW</span></td></tr>
+          <tr><td>intern wearing JugaadProdOperator</td><td>Stop lab</td><td><span class="pill d">DENY</span></td></tr>
+        </table></div>
+
         <div class="mission"><b class="t">Mission briefing</b>
-          <p>Testing by clicking is slow and risky. Professionals <b>simulate</b> permissions. Your mission: prove the intern's access without ever logging in as the intern.</p></div>
-
+          <p>Testing by clicking is slow and risky. Professionals <b>simulate</b> permissions. Prove the intern's access without logging in as him.</p></div>
         <div class="concept"><h4>What is the IAM Policy Simulator?</h4><p>A tool that evaluates policies against actions you choose, and tells you allowed / denied and <i>which statement</i> decided. No real API calls are made, so nothing gets stopped or deleted.</p></div>
-
-        <div class="task"><input type="checkbox" id="t6a" data-task><label for="t6a">Open <a href="https://policysim.aws.amazon.com" target="_blank" rel="noopener">policysim.aws.amazon.com</a> as admin → Users → <span class="inl">jugaad-intern</span></label>
-          <div class="detail"><p>Select service <b>Amazon EC2</b>, actions <span class="inl">DescribeInstances</span>, <span class="inl">StopInstances</span>, <span class="inl">TerminateInstances</span> → <b>Run simulation</b>.</p>
-          <details class="hint"><summary>Why might StopInstances show "denied" here?</summary><p>The simulator doesn't know your instance's tag unless you tell it. Our policy only allows when <span class="inl">aws:ResourceTag/Env = lab</span>. Add a context key/resource in the simulator settings to mimic it. Missing information = condition not met = deny.</p></details></div></div>
-        <div class="task"><input type="checkbox" id="t6b"><label for="t6b">Bonus: add an <b>explicit Deny</b> and watch it beat the Allow</label>
-          <div class="detail"><p>Create a policy, attach it to <span class="inl">jugaad-operators</span>, retry Stop on the lab server as intern (or simulate it). Then detach it.</p>
+        <div class="task"><input type="checkbox" id="t7a" data-task><label for="t7a">Open <a href="https://policysim.aws.amazon.com" target="_blank" rel="noopener">policysim.aws.amazon.com</a> as admin → Users → <span class="inl">jugaad-intern</span></label>
+          <div class="detail"><p>Select service <b>Amazon EC2</b>, actions <span class="inl">DescribeInstances</span>, <span class="inl">StopInstances</span>, <span class="inl">TerminateInstances</span> → <b>Run simulation</b>. Compare with what you saw live.</p>
+          <details class="hint"><summary>Why might StopInstances show "denied" here?</summary><p>The simulator doesn't know your instance's tag unless you tell it. Our policy only allows when <span class="inl">aws:ResourceTag/Env = lab</span>. Add that as a context key in the simulator settings. Missing information = condition not met = deny.</p></details></div></div>
+        <div class="task"><input type="checkbox" id="t7b">
+          <label for="t7b">(Bonus) Explicit deny beats allow</label>
+          <div class="detail"><p>Create this policy, attach it to <span class="inl">jugaad-operators</span>, retry Stop on the lab server as intern, then detach it.</p>
             <div class="code"><span class="fn">JugaadFreezeStops.json</span><button class="copy">Copy</button><pre><code>{
   "Version": "2012-10-17",
   "Statement": [{
@@ -409,8 +517,9 @@
     "Resource": "*"
   }]
 }</code></pre></div></div></div>
-        <div class="task"><input type="checkbox" id="t6c"><label for="t6c">(Optional) CLI version in <b>CloudShell</b></label>
-          <div class="detail"><p>Click the CloudShell icon in the top bar (no install). Replace <span class="inl">&lt;ACCOUNT_ID&gt;</span> (top-right menu).</p>
+        <div class="task"><input type="checkbox" id="t7c">
+          <label for="t7c">(Optional) CLI version in <b>CloudShell</b></label>
+          <div class="detail"><p>Click the CloudShell icon in the top bar (no install). Replace <span class="inl">&lt;ACCOUNT_ID&gt;</span>.</p>
             <div class="code"><span class="fn">CloudShell</span><button class="copy">Copy</button><pre><code>aws sts get-caller-identity
 
 aws iam simulate-principal-policy \
@@ -421,34 +530,19 @@ aws iam simulate-principal-policy \
         <div class="docbox"><b>📸 Show it off:</b> screenshot the simulator result and post it with <span class="inl">#TheJugaadSRE</span>.</div>
       </section>
 
-      <!-- ===== 7 HARDEN ===== -->
-      <section class="module" id="m7" data-title="Harden like an SRE">
-        <span class="tag">Module 7</span>
-        <h2>Harden it like an SRE</h2>
-        <p class="why">Working permissions aren't the finish line. Make them safe.</p>
-        <div class="concept"><h4>What is MFA?</h4><p><b>Multi-Factor Authentication</b>: a password (something you know) plus a code from your phone (something you have). A leaked password alone is no longer enough.</p></div>
-        <div class="options"><h4>MFA options &amp; what to choose</h4><table><tr><th>Type</th><th>Notes</th></tr>
-          <tr class="pick"><td>Authenticator app (TOTP)</td><td>Free, quick. Google/Microsoft Authenticator, Authy.</td></tr>
-          <tr><td>Passkey / security key (FIDO2)</td><td>Strongest, phishing-resistant. Needs a key or compatible device.</td></tr>
-          <tr><td>SMS</td><td>Not offered by AWS for IAM. Don't rely on it anywhere.</td></tr></table></div>
-        <div class="task"><input type="checkbox" id="t7a" data-task><label for="t7a">Enable MFA on your own admin user (Security credentials → Assign MFA device)</label></div>
-        <div class="task"><input type="checkbox" id="t7b" data-task><label for="t7b">Open <b>IAM Access Analyzer</b> and browse the findings page</label></div>
-        <div class="task"><input type="checkbox" id="t7c" data-task><label for="t7c">Write down your own 3 rules</label>
-          <div class="detail"><details class="hint"><summary>Jugaad SRE's 3 rules</summary><p>1. Root = break-glass only, with MFA.<br>2. Permissions go on groups/roles, never straight on people.<br>3. Start from zero; add only what a failing request demands.</p></details></div></div>
-      </section>
-
       <!-- ===== 8 CLEANUP ===== -->
       <section class="module" id="m8" data-title="Delete your resources">
         <span class="tag">Module 8</span>
         <h2>Delete your resources</h2>
-        <div class="callout warn"><b class="t">Don't skip</b><p>Running instances keep billing after the workshop ends. Do this now.</p></div>
+        <div class="callout warn"><b class="t">Don't skip</b><p>Running instances keep billing after the workshop ends. Do this now, as admin.</p></div>
         <div class="task"><input type="checkbox" id="t8a" data-task><label for="t8a">EC2 → select both servers → Instance state → <b>Terminate</b> → wait for "Terminated"</label>
           <div class="detail"><div class="options"><h4>Stop vs Terminate</h4><table><tr><th>Action</th><th>Effect</th></tr><tr><td>Stop</td><td>Powered off; disk still billed; can start again</td></tr><tr class="pick"><td>Terminate</td><td>Deleted for good. Pick this for cleanup.</td></tr></table></div></div></div>
-        <div class="task"><input type="checkbox" id="t8b" data-task><label for="t8b">Delete users <span class="inl">jugaad-intern</span> and <span class="inl">jugaad-viewer</span></label></div>
-        <div class="task"><input type="checkbox" id="t8c" data-task><label for="t8c">Delete groups <span class="inl">jugaad-operators</span>, <span class="inl">jugaad-viewers</span></label></div>
-        <div class="task"><input type="checkbox" id="t8d" data-task><label for="t8d">Delete policies <span class="inl">JugaadLabOperator</span> (and <span class="inl">JugaadFreezeStops</span> if you made it)</label></div>
-        <div class="task"><input type="checkbox" id="t8e"><label for="t8e">(Optional) Delete the account alias</label></div>
-        <div class="check">EC2 shows 0 running instances. IAM shows none of your lab users, groups or policies.</div>
+        <div class="task"><input type="checkbox" id="t8b" data-task><label for="t8b">Delete users <span class="inl">jugaad-intern</span> and <span class="inl">jugaad-viewer</span>, and remove the intern's entry from your authenticator app</label></div>
+        <div class="task"><input type="checkbox" id="t8c" data-task><label for="t8c">Delete groups <span class="inl">jugaad-operators</span> and <span class="inl">jugaad-viewers</span></label></div>
+        <div class="task"><input type="checkbox" id="t8d" data-task><label for="t8d">Delete role <span class="inl">JugaadProdOperator</span></label></div>
+        <div class="task"><input type="checkbox" id="t8e" data-task><label for="t8e">Delete policies: <span class="inl">JugaadLabOperator</span>, <span class="inl">JugaadProdOperatorPolicy</span>, <span class="inl">JugaadAssumeProdRole</span> (and <span class="inl">JugaadFreezeStops</span> if you made it)</label></div>
+        <div class="check">EC2 shows 0 running instances. IAM shows none of your lab users, groups, roles or policies.</div>
+        <div class="callout jugaad"><b class="t">Jugaad SRE's 3 rules</b><p>1. Root = break-glass only, with MFA.<br>2. Permissions go on groups/roles, never straight on people.<br>3. Start from zero; add only what a failing request demands.</p></div>
       </section>
 
       <!-- ===== 9 QUIZ ===== -->
@@ -463,7 +557,7 @@ aws iam simulate-principal-policy \
         <div class="finish">
           <span class="tag" style="color:#ffb089">You made it</span>
           <h2>Your documentation &amp; certificate</h2>
-          <p><b>What you just learned:</b> EC2 + tags, IAM policies (Effect/Action/Resource/Condition), account aliases, users/groups/roles, ALLOW vs DENY evaluation, the Policy Simulator, MFA and cleanup.</p>
+          <p><b>What you just did, hands-on:</b> launched and tagged EC2 servers, met implicit deny, wrote a JSON policy and watched ALLOW/DENY change live, used groups and an AWS managed policy, secured a login with a phone MFA code, and borrowed temporary access with a role.</p>
           <p class="mini" style="color:#ffd9c7">Pro tip: Ctrl+F / Cmd+F for <b>"Feeling stuck"</b> to revisit tricky spots.</p>
           <p id="finMsg">Complete every task above to unlock your certificate.</p>
           <button class="btn" id="certBtn" disabled>🎓 Generate my certificate</button>
@@ -483,7 +577,7 @@ aws iam simulate-principal-policy \
   </footer>
 </div>
 
-<script src="config.js?v=12"></script>
-<script src="app.js?v=12"></script>
+<script src="config.js?v=13"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

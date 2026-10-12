@@ -248,3 +248,5 @@ html,body{overflow-x:hidden}
 details.options>.body,details.concept>.body{overflow-x:auto;min-width:0}
 .options tr.pick td:first-child:after{white-space:normal}
 @media(max-width:600px){.options table,table.ad{font-size:.8rem}table th,table td{padding:.45rem .4rem}}
+
+h3.prove{display:inline-block;background:var(--tint);border:1px solid #f0c7b3;color:var(--orange-d);border-radius:12px;padding:.4rem .9rem;font-size:1rem;margin-top:2.2rem}

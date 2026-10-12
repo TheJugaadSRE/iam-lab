@@ -209,6 +209,8 @@
     { q: "A brand-new IAM user with no policies tries to stop an EC2 instance. Result?", o: ["Allowed", "Denied (implicit deny)", "Allowed because the instance is in the same account"], a: 1, w: "IAM is deny-by-default. No Allow = no access." },
     { q: "A user has Allow on ec2:StopInstances in one policy and Deny on it in another. Result?", o: ["Allowed, Allow wins", "Denied, explicit Deny always wins", "Whichever policy was created first"], a: 1, w: "Explicit Deny beats every Allow." },
     { q: "Best way to give 20 interns the same access?", o: ["Attach policy to each user", "Put them in a group and attach the policy to it", "Share one user's password"], a: 1, w: "Groups make permissions manageable and auditable." },
+    { q: "An intern's password leaks, but his account has MFA. What happens when the thief tries to log in?", o: ["They get in, MFA is optional", "They're stopped at the MFA code, which only the intern's phone can produce", "AWS emails the intern a new password"], a: 1, w: "MFA adds something you have (the phone) on top of something you know (the password)." },
+    { q: "Why give the intern a role for prod emergencies instead of permanent prod permissions?", o: ["Roles are free, policies cost money", "Role credentials are temporary and auditable, then access is gone", "Roles can never be denied"], a: 1, w: "Roles hand out short-lived credentials, so elevated access doesn't linger." },
     { q: "Our start/stop policy used the condition aws:ResourceTag/Env = lab. What does it do?", o: ["Limits actions to resources carrying that tag", "Tags every new instance automatically", "Blocks the lab tag"], a: 0, w: "Tag-based conditions are the basis of ABAC." }
   ];
   function buildQuiz() {
