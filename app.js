@@ -186,5 +186,13 @@
     $("#certWrap").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // sign out / switch user (also via ?reset in the URL)
+  const signOut = () => { localStorage.removeItem(KEY); location.replace(location.pathname); };
+  if (location.search.includes("reset")) signOut();
+  $("#signout").addEventListener("click", e => {
+    e.preventDefault();
+    if (confirm("Sign out? Your saved progress on this device will be cleared.")) signOut();
+  });
+
   if (state.user) showApp();
 })();
