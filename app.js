@@ -8,14 +8,31 @@
   state.quiz = state.quiz || {};
   const save = () => localStorage.setItem(KEY, JSON.stringify(state));
 
-  // ---------- lead gate ----------
-  function sendLead(type, extra = {}) {
-    if (!C.LEAD_ENDPOINT || !state.user) return;
-    const body = new URLSearchParams({
-      type, source: location.hostname, consent: state.user.consent ? "yes" : "no",
-      ...state.user, ...extra
-    });
-    fetch(C.LEAD_ENDPOINT, { method: "POST", mode: "no-cors", body }).catch(() => {});
+  // ---------- server helpers ----------
+  const LAST = "jugaad-last-user";
+  const PKEY = email => "jugaad-progress-" + email.toLowerCase();
+  const digits = s => String(s || "").replace(/\D/g, "").slice(-10);
+
+  async function api(params) {
+    if (!C.LEAD_ENDPOINT) return null;
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+    try {
+      const r = await fetch(C.LEAD_ENDPOINT, { method: "POST", body: new URLSearchParams(params), signal: ctl.signal });
+      return await r.json();
+    } catch { return null; } finally { clearTimeout(t); }
+  }
+  const payload = () => ({ ...state.user, consent: "yes", source: location.hostname });
+  const doneIds = () => Object.keys(state.tasks).filter(k => state.tasks[k]).join(",");
+
+  // save progress to the sheet (debounced). Also re-creates the row if it is missing.
+  let syncT;
+  function syncProgress() {
+    if (!state.user) return;
+    clearTimeout(syncT);
+    syncT = setTimeout(() => {
+      const p = pct().p;
+      api({ type: p === 100 ? "completed" : "progress", ...payload(), progress: p, tasks: doneIds() });
+    }, 1500);
   }
 
   function showApp() {
@@ -28,11 +45,31 @@
     $("#mname").textContent = state.user.name;
     $("#mmail").textContent = state.user.email;
     $("#mcollege").textContent = state.user.college;
+    try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
     window.scrollTo(0, 0);
     init();
   }
 
-  $("#leadForm").addEventListener("submit", e => {
+  // restore progress saved on this device for this email (after sign out)
+  function loadBackup(email) {
+    try { return JSON.parse(localStorage.getItem(PKEY(email)) || "null"); } catch { return null; }
+  }
+
+  // ---------- register / login tabs ----------
+  const showTab = name => {
+    $("#leadForm").hidden = name !== "reg";
+    $("#loginForm").hidden = name !== "log";
+  };
+  $$(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+  const lastUser = localStorage.getItem(LAST);
+  if (lastUser) { $("#lemail").value = lastUser; showTab("log"); }
+
+  const busy = (btn, on, txt) => {
+    if (on) { btn.dataset.t = btn.textContent; btn.textContent = txt; } else btn.textContent = btn.dataset.t || btn.textContent;
+    btn.disabled = on;
+  };
+
+  $("#leadForm").addEventListener("submit", async e => {
     e.preventDefault();
     const v = id => $("#" + id).value.trim();
     const err = m => ($("#formErr").textContent = m);
@@ -41,12 +78,45 @@
     if (!/^\+?[\d\s-]{10,15}$/.test(v("whatsapp"))) return err("Enter a valid WhatsApp number.");
     if (!/linkedin\.com/i.test(v("linkedin"))) return err("Enter your LinkedIn profile URL.");
     if (!$("#consent").checked) return err("Please tick the consent box to continue.");
+    err("");
+    const btn = $("#leadForm button[type=submit]");
+    busy(btn, true, "Please wait…");
     state.user = {
-      name: v("name"), email: v("email"), whatsapp: v("whatsapp"),
+      name: v("name"), email: v("email").toLowerCase(), whatsapp: v("whatsapp"),
       year: v("year"), college: v("college"), linkedin: v("linkedin"), consent: true
     };
+    const bk = loadBackup(state.user.email);
+    if (bk) { state.tasks = bk.tasks || {}; state.quiz = bk.quiz || {}; }
     save();
-    sendLead("signup", { progress: 0 });
+    // server de-duplicates by email: an existing email just continues, no second row
+    await api({ type: "signup", ...payload(), progress: 0, tasks: doneIds() });
+    busy(btn, false);
+    showApp();
+  });
+
+  $("#loginForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = m => ($("#loginErr").textContent = m);
+    const email = $("#lemail").value.trim().toLowerCase(), wa = $("#lwhatsapp").value.trim();
+    if (!email || !digits(wa)) return err("Enter your email and WhatsApp number.");
+    err("");
+    const btn = $("#loginForm button[type=submit]");
+    busy(btn, true, "Checking…");
+    const r = await api({ type: "login", email, whatsapp: wa });
+    const bk = loadBackup(email);
+    let user = null, tasks = {};
+    if (r && r.ok) {
+      user = { name: r.name, email: r.email, whatsapp: r.whatsapp, college: r.college, year: r.year, linkedin: r.linkedin, consent: true };
+      String(r.tasks || "").split(",").filter(Boolean).forEach(id => (tasks[id] = true));
+    } else if (!r && bk && bk.user && digits(bk.user.whatsapp) === digits(wa)) {
+      user = bk.user; // server unreachable: fall back to this device's saved copy
+    }
+    busy(btn, false);
+    if (!user) return err(r ? "We couldn't find that email + WhatsApp. Check them, or use Register." : "Couldn't reach the server. Check your internet and try again.");
+    state.user = user;
+    state.tasks = { ...(bk ? bk.tasks : {}), ...tasks };
+    state.quiz = bk ? bk.quiz || {} : {};
+    save();
     showApp();
   });
 
@@ -116,7 +186,7 @@
         state.tasks[c.id] = c.checked; save();
         c.closest(".task").classList.toggle("checked", c.checked);
         refresh();
-        if (pct().p === 100 && !state.doneSent) { state.doneSent = true; save(); sendLead("completed", { progress: 100 }); }
+        syncProgress();
       });
     });
 
@@ -194,7 +264,14 @@
   }
 
   // sign out / switch user (also via ?reset in the URL)
-  const signOut = () => { localStorage.removeItem(KEY); location.replace(location.pathname); };
+  const signOut = () => {
+    if (state.user) {
+      localStorage.setItem(PKEY(state.user.email), JSON.stringify({ user: state.user, tasks: state.tasks, quiz: state.quiz }));
+      localStorage.setItem(LAST, state.user.email);
+    }
+    localStorage.removeItem(KEY);
+    location.replace(location.pathname);
+  };
   if (location.search.includes("reset")) signOut();
   $("#signout").addEventListener("click", e => { e.preventDefault(); signOut(); });
 
@@ -206,8 +283,8 @@
   document.addEventListener("click", e => { if (!e.target.closest("#userMenu")) setMenu(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
 
-  // gate: Login button jumps to the form
-  $("#loginBtn").addEventListener("click", () => { $("#leadForm").scrollIntoView({ behavior: "smooth", block: "center" }); $("#email").focus(); });
+  // gate: top-right Login button opens the login tab
+  $("#loginBtn").addEventListener("click", () => { showTab("log"); $("#loginForm").scrollIntoView({ behavior: "smooth", block: "center" }); $("#lemail").focus(); });
 
   if (state.user) showApp();
 })();

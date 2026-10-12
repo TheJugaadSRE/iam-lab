@@ -9,7 +9,7 @@
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -30,7 +30,9 @@
     <div class="speaker"><div class="avatar">SV</div><div><b style="color:var(--ink)">Shobhit Verma</b><br>SRE &amp; Platform Engineering · Creator @TheJugaadSRE</div></div>
   </div>
 
+  <div class="formwrap">
   <form class="formcard" id="leadForm" novalidate>
+    <div class="tabs"><button type="button" data-tab="reg" class="on">Register</button><button type="button" data-tab="log">Login</button></div>
     <h2>Unlock the lab</h2>
     <small>Free. Takes 20 seconds. Your progress is saved on this device.</small>
     <label class="f" for="name">Full name *</label>
@@ -50,8 +52,20 @@
       <span>I agree to share my details with TheJugaadSRE and be contacted by email / WhatsApp. I can opt out anytime.</span></label>
     <p class="err" id="formErr"></p>
     <button class="btn full" type="submit">Start the lab →</button>
-    <p class="mini" style="text-align:center;margin:.8rem 0 0">Already registered? Use the same details to continue.</p>
+    
   </form>
+  <form class="formcard" id="loginForm" novalidate hidden>
+    <div class="tabs"><button type="button" data-tab="reg">Register</button><button type="button" data-tab="log" class="on">Login</button></div>
+    <h2>Welcome back</h2>
+    <small>Enter the email and WhatsApp number you registered with. You won't be registered again.</small>
+    <label class="f" for="lemail">Email</label>
+    <input type="email" id="lemail" autocomplete="email" required>
+    <label class="f" for="lwhatsapp">WhatsApp number</label>
+    <input type="tel" id="lwhatsapp" autocomplete="tel" required>
+    <p class="err" id="loginErr"></p>
+    <button class="btn full" type="submit">Login →</button>
+  </form>
+  </div>
 </section>
 
 <!-- ============ APP ============ -->
@@ -466,7 +480,7 @@ aws iam simulate-principal-policy \
   </footer>
 </div>
 
-<script src="config.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="config.js?v=5"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
