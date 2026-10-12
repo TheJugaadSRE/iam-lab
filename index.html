@@ -9,7 +9,7 @@
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -235,24 +235,16 @@
         <div class="scenario">Time to turn your manager's sentence into JSON: "restart lab, never touch prod".</div>
         <div class="goal"><b>In this module you'll:</b><ul><li>Understand what a policy is and how it's structured</li><li>Create a customer-managed policy called <span class="inl">JugaadLabOperator</span></li></ul></div>
 
-        <div class="concept"><h4>What is an IAM policy?</h4>
-          <p>A JSON document that lists permissions. IAM reads it on every request and decides ALLOW or DENY. Policies do nothing on their own; they take effect when <b>attached</b> to a user, group or role.</p></div>
+        <h3>What do IAM Policies do?</h3>
+        <p>An IAM policy is a written rule that says <b>who can do what</b> with your AWS resources. Every time someone tries to start a server, open a bucket or read a secret, AWS checks the policies that apply to them and answers ALLOW or DENY.</p>
+        <p>On their own, policies do nothing. They only take effect once they are <b>attached</b> to a user, a user group or a role. Attach one to a group and everyone in that group gets the same rules.</p>
+        <p>Without any policy, the answer is always DENY. That's why a brand-new user can't do anything yet.</p>
 
         <div class="options"><h4>Types of policy: what to choose</h4><table>
           <tr><th>Type</th><th>What it is</th><th>When</th></tr>
           <tr><td>AWS managed</td><td>Written &amp; updated by AWS (e.g. <span class="inl">AmazonEC2ReadOnlyAccess</span>)</td><td>Quick start; often broader than you need</td></tr>
           <tr class="pick"><td>Customer managed</td><td>You write it, reusable on many identities, versioned</td><td>Our pick: precise and reusable</td></tr>
           <tr><td>Inline</td><td>Embedded in one single user/group/role</td><td>Rare one-offs; hard to audit</td></tr></table></div>
-
-        <div class="concept"><h4>Anatomy of a policy</h4>
-          <table class="ad" style="margin-top:.4rem"><tr><th>Element</th><th>Meaning</th></tr>
-            <tr><td><span class="inl">Version</span></td><td>Policy language version. Always <span class="inl">"2012-10-17"</span>.</td></tr>
-            <tr><td><span class="inl">Statement</span></td><td>List of individual rules.</td></tr>
-            <tr><td><span class="inl">Sid</span></td><td>Optional label for the rule (for humans).</td></tr>
-            <tr><td><span class="inl">Effect</span></td><td><span class="inl">Allow</span> or <span class="inl">Deny</span>.</td></tr>
-            <tr><td><span class="inl">Action</span></td><td>What API calls: <span class="inl">ec2:StopInstances</span>. Wildcards allowed: <span class="inl">ec2:Describe*</span>.</td></tr>
-            <tr><td><span class="inl">Resource</span></td><td>On which things, as ARNs (Amazon Resource Names). <span class="inl">*</span> = all.</td></tr>
-            <tr><td><span class="inl">Condition</span></td><td>Extra "only if…" tests: tags, IP, time, MFA…</td></tr></table></div>
 
         <h3>Create it</h3>
         <div class="task"><input type="checkbox" id="t2a" data-task><label for="t2a">Search <b>IAM</b> → <b>Policies</b> → <b>Create policy</b></label></div>
@@ -287,9 +279,20 @@
             <details class="hint"><summary>Read it like a sentence</summary>
               <p><b>Rule 1:</b> allow listing/viewing EC2 things everywhere. (Describe actions can't be limited per-resource, so <span class="inl">*</span> is required.)<br><b>Rule 2:</b> allow starting and stopping instances, <i>but only if</i> the instance's <span class="inl">Env</span> tag equals <span class="inl">lab</span>.</p>
               <p>Nothing grants terminate, create or delete, so those stay denied by default.</p></details></div></div>
+        <div class="callout sre"><b class="t">What are we doing right now?</b>
+          <p>We're writing the rule in JSON, the format AWS stores every policy in. The pasted policy has two statements: one lets people <i>see</i> EC2 resources, the other lets them <i>start and stop</i> only the instances tagged <span class="inl">Env=lab</span>. Nothing else is granted, so prod stays untouched.</p></div>
         <div class="task"><input type="checkbox" id="t2c" data-task><label for="t2c"><b>Next</b> → Policy name <span class="inl">JugaadLabOperator</span> → <b>Create policy</b></label>
           <div class="detail"><p>Add a description like "Start/stop Env=lab EC2 only" — future you will thank you.</p></div></div>
         <div class="check">You see "Policy JugaadLabOperator created" and it appears in the list as <b>Customer managed</b>.</div>
+        <h3>Extra for Experts: how are JSON policies structured?</h3>
+        <p>Let's unpack the policy you just pasted. Every policy is built from the same few pieces:</p>
+        <p><b>Version</b><br>The policy language version. It's always <span class="inl">2012-10-17</span>, the current one.</p>
+        <p><b>Statement</b><br>The main body: a list of rules. Our policy has two. Each rule can carry an optional <span class="inl">Sid</span>, a human-readable label such as <span class="inl">SeeEverything</span>.</p>
+        <p><b>Effect</b><br><span class="inl">Allow</span> or <span class="inl">Deny</span>. If two rules clash, an explicit Deny always wins.</p>
+        <p><b>Action</b><br>The things a person may do, written as <span class="inl">service:Operation</span>, for example <span class="inl">ec2:StopInstances</span>. A star is a wildcard, so <span class="inl">ec2:Describe*</span> covers every Describe action.</p>
+        <p><b>Resource</b><br>What the rule applies to, written as an ARN (Amazon Resource Name). A single <span class="inl">*</span> means everything. Ours points at EC2 instances only.</p>
+        <p><b>Condition (optional)</b><br>An extra "only if" test. Ours checks the instance tag, so the rule applies only when <span class="inl">Env</span> equals <span class="inl">lab</span>. Conditions can also check IP address, time of day or whether MFA was used.</p>
+
         <details class="stuck"><summary>Feeling stuck? JSON errors</summary><ul><li>Red marker in the editor = a missing comma/bracket. Re-copy the block with the Copy button.</li><li>Use the <b>Security / Errors / Warnings</b> tabs under the editor, they explain problems in plain English.</li></ul></details>
       </section>
 
@@ -480,7 +483,7 @@ aws iam simulate-principal-policy \
   </footer>
 </div>
 
-<script src="config.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<script src="config.js?v=12"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
