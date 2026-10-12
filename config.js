@@ -2,7 +2,7 @@
 window.JUGAAD_CONFIG = {
   // Paste the Google Apps Script Web App URL here (see README.md, step 1).
   // While empty, sign-ups are only saved in the visitor's own browser.
-  LEAD_ENDPOINT: "",
+  LEAD_ENDPOINT: "https://script.google.com/macros/s/AKfycbyfqlcw_Sro2_hw3DZcZd5etv5xuOqVgkPiH4KeQ3YRqRnSxbfiRzL7xZcktvR6QHdE/exec",
 
   // Shown in the footer for opt-out / data-deletion requests
   CONTACT_EMAIL: "",
