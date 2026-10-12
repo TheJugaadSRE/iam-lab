@@ -191,3 +191,6 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:.9rem 0 .25rem}
   .metagrid{grid-template-columns:1fr}
 }
 @media print{header.top,nav.side,#gate{display:none!important}}
+
+#signout{font:600 .82rem var(--sans);color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:.3rem .8rem;background:var(--card);white-space:nowrap}
+#signout:hover{border-color:var(--ink)}
