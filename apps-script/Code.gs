@@ -1,21 +1,17 @@
 /**
- * TheJugaadSRE lab: lead capture + login + game scores + screenshot proofs (Google Apps Script).
+ * TheJugaadSRE lab: lead capture + login + game scores (Google Apps Script).
  * Bind to a PRIVATE Google Sheet (Extensions > Apps Script), then
  * Deploy > New deployment > Web app > Execute as: Me | Who has access: Anyone.
  * After ANY change to this file: Deploy > Manage deployments > Edit > New version > Deploy.
- * (The first deploy asks you to authorise Google Drive access: screenshots are saved to a
- *  private Drive folder called "IAM Lab Proofs" in YOUR Drive.)
  *
  * Rows are keyed by email, so one student = one row (no duplicates).
  *   signup    -> new row, or "exists" if the email is already there
  *   progress  -> updates progress / points / tasks / quiz (creates the row if it is missing)
  *   completed -> same as progress, status becomes "completed"
- *   proof     -> saves a screenshot to Drive and records the task id on the row
  *   login     -> email + WhatsApp must match a row; returns profile + saved progress
  */
-const HEADERS = ["First seen", "Status", "Name", "Email", "WhatsApp", "College", "Year", "LinkedIn", "Consent", "Progress %", "Source", "Last active", "Tasks done", "Points", "Screenshots", "Proof tasks", "Quiz"];
-const COL = { STATUS: 2, PROGRESS: 10, ACTIVE: 12, TASKS: 13, POINTS: 14, SHOTS: 15, PROOFS: 16, QUIZ: 17 };
-const FOLDER_NAME = "IAM Lab Proofs";
+const HEADERS = ["First seen", "Status", "Name", "Email", "WhatsApp", "College", "Year", "LinkedIn", "Consent", "Progress %", "Source", "Last active", "Tasks done", "Points", "Quiz"];
+const COL = { STATUS: 2, PROGRESS: 10, ACTIVE: 12, TASKS: 13, POINTS: 14, QUIZ: 15 };
 
 function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
@@ -35,22 +31,6 @@ function findRow_(sheet, email) {
   }
   return 0;
 }
-function folder_() {
-  const it = DriveApp.getFoldersByName(FOLDER_NAME);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
-}
-// save one screenshot, replacing any earlier one for the same student + task
-function saveProof_(email, task, dataUrl) {
-  const m = String(dataUrl || "").match(/^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+\/=]+)$/);
-  if (!m || dataUrl.length > 700000 || !/^t\d{1,2}[a-z]$/.test(task)) return false;
-  const name = email.replace(/[^a-z0-9@._-]/gi, "_") + "__" + task + (m[1] === "image/png" ? ".png" : ".jpg");
-  const folder = folder_();
-  const old = folder.getFilesByName(name);
-  while (old.hasNext()) old.next().setTrashed(true);
-  folder.createFile(Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], name));
-  return true;
-}
-
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -71,26 +51,14 @@ function doPost(e) {
       const r = sheet.getRange(row, 1, 1, HEADERS.length).getValues()[0];
       if (digits_(r[4]) !== digits_(p.whatsapp)) return json_({ ok: false });
       sheet.getRange(row, COL.ACTIVE).setValue(now);
-      return json_({ ok: true, name: r[2], email: r[3], whatsapp: String(r[4]), college: r[5], year: r[6], linkedin: r[7], progress: r[9], tasks: String(r[12] || ""), proofs: String(r[15] || ""), quiz: String(r[16] || "") });
-    }
-
-    if (type === "proof") {
-      if (!row) return json_({ ok: false });
-      if (!saveProof_(email, String(p.task || ""), p.image)) return json_({ ok: false });
-      const cell = sheet.getRange(row, COL.PROOFS);
-      const list = String(cell.getValue() || "").split(",").filter(Boolean);
-      if (list.indexOf(p.task) < 0) list.push(p.task);
-      cell.setValue(list.join(","));
-      sheet.getRange(row, COL.SHOTS).setValue(list.length);
-      sheet.getRange(row, COL.ACTIVE).setValue(now);
-      return json_({ ok: true, status: "proof" });
+      return json_({ ok: true, name: r[2], email: r[3], whatsapp: String(r[4]), college: r[5], year: r[6], linkedin: r[7], progress: r[9], tasks: String(r[12] || ""), quiz: String(r[14] || "") });
     }
 
     const progress = Number(p.progress) || 0;
     const status = progress >= 100 ? "completed" : "registered";
 
     if (!row) {
-      sheet.appendRow([now, status, clean_(p.name), email, clean_(p.whatsapp), clean_(p.college), clean_(p.year), clean_(p.linkedin), p.consent || "", progress, clean_(p.source), now, clean_(p.tasks), Number(p.points) || 0, 0, clean_(p.proofs), clean_(p.quiz)]);
+      sheet.appendRow([now, status, clean_(p.name), email, clean_(p.whatsapp), clean_(p.college), clean_(p.year), clean_(p.linkedin), p.consent || "", progress, clean_(p.source), now, clean_(p.tasks), Number(p.points) || 0, clean_(p.quiz)]);
       return json_({ ok: true, status: "new" });
     }
 

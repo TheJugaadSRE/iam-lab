@@ -9,7 +9,7 @@
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 
@@ -156,7 +156,7 @@
         <div class="scenario"><b>The story.</b> You've just joined <b>Jugaad Corp</b> as the first SRE. An intern, <b>Ishaan</b>, starts Monday. Your manager says: "He needs to restart the lab server. He must never touch production." Your job: make that sentence true in AWS.</div>
 
         <div class="callout jugaad"><b class="t">🎮 Play for points</b>
-          <p><b>+5</b> for every task you tick · <b>+5 bonus</b> for attaching a screenshot on the 📸 "prove it" tasks · <b>+5</b> for every quiz answer you get right. Your total, your rank and a score card go on your certificate. <span class="mini">Screenshots are stored privately by TheJugaadSRE to verify your work. Hide your AWS account ID if you prefer.</span></p></div>
+          <p><b>+5</b> for every task you tick · <b>+5</b> for every quiz answer you get right. Your total, your rank and a score card go on your certificate.</p></div>
 
         <div class="concept"><h4>What is IAM?</h4>
           <p><b>IAM</b> = <b>I</b>dentity and <b>A</b>ccess <b>M</b>anagement. It's the AWS service that answers two questions on every single request: <b>Who are you?</b> (authentication) and <b>What are you allowed to do?</b> (authorization).</p>
@@ -233,7 +233,7 @@
         <h3 class="prove">🎯 Prove it: you, the admin, can control both</h3>
         <div class="task"><input type="checkbox" id="t1j" data-task><label for="t1j">In the Instances search box type <span class="inl">tag:Env=lab</span> and press Enter. Only the lab server should remain</label>
           <div class="detail"><p>That's exactly how IAM will "see" your tag later. Clear the filter, then try <span class="inl">tag:Env=prod</span>.</p></div></div>
-        <div class="task"><input type="checkbox" id="t1k" data-task data-proof><label for="t1k">Select <span class="inl">jugaad-lab-server</span> → <b>Instance state → Stop instance</b> → wait for <b>Stopped</b> → <b>Start instance</b> again</label>
+        <div class="task"><input type="checkbox" id="t1k" data-task><label for="t1k">Select <span class="inl">jugaad-lab-server</span> → <b>Instance state → Stop instance</b> → wait for <b>Stopped</b> → <b>Start instance</b> again</label>
           <div class="detail"><p>It worked because you're an admin. <b>Remember this feeling</b>: in the next modules an intern will try the same click and AWS will say no.</p></div></div>
         <div class="check">Two tagged instances, and you've seen that an admin can stop and start both. This is our baseline.</div>
         <details class="stuck"><summary>Feeling stuck? Common problems</summary>
@@ -278,7 +278,7 @@
         <h3 class="prove">🎯 Prove it: log in as the intern</h3>
         <div class="task"><input type="checkbox" id="t2e" data-task><label for="t2e">In your <b>incognito window</b> open the alias sign-in URL and log in as <span class="inl">jugaad-intern</span></label>
           <div class="detail"><p>Account = your alias (pre-filled), IAM user name <span class="inl">jugaad-intern</span>, your password. Set the region to ap-south-1.</p></div></div>
-        <div class="task"><input type="checkbox" id="t2f" data-task data-proof><label for="t2f">Open <b>EC2 → Instances</b> as the intern</label>
+        <div class="task"><input type="checkbox" id="t2f" data-task><label for="t2f">Open <b>EC2 → Instances</b> as the intern</label>
           <div class="detail"><p>You'll see red <b>"You are not authorized to perform…"</b> messages, and no instances. Click <b>Instance state</b> on anything you can find: nothing works.</p>
           <details class="hint"><summary>Reading the error message</summary><p>It tells you <b>who</b> (the user ARN), <b>what</b> (e.g. ec2:DescribeInstances) and <b>why</b> ("no identity-based policy allows" = implicit deny). This message is your best debugging friend.</p></details></div></div>
         <div class="check">The intern can log in but can do nothing. AWS is <b>deny by default</b>. Keep this incognito window open: you'll refresh it after each module.</div>
@@ -356,15 +356,15 @@
         <div class="task"><input type="checkbox" id="t3e" data-task><label for="t3e">Add user <span class="inl">jugaad-intern</span> and attach policy <span class="inl">JugaadLabOperator</span> → <b>Create user group</b></label></div>
 
         <h3 class="prove">🎯 Prove it: the intern's new powers</h3>
-        <div class="task"><input type="checkbox" id="t3f" data-task data-proof><label for="t3f">In the incognito window <b>refresh</b> EC2 → Instances as <span class="inl">jugaad-intern</span> (wait ~30 seconds if it still errors)</label>
+        <div class="task"><input type="checkbox" id="t3f" data-task><label for="t3f">In the incognito window <b>refresh</b> EC2 → Instances as <span class="inl">jugaad-intern</span> (wait ~30 seconds if it still errors)</label>
           <div class="detail"><p>The red errors disappear and you now see both servers. <span class="pill a">ALLOW</span> View.</p></div></div>
-        <div class="task"><input type="checkbox" id="t3g" data-task data-proof><label for="t3g">Stop <span class="inl">jugaad-lab-server</span> as the intern</label>
+        <div class="task"><input type="checkbox" id="t3g" data-task><label for="t3g">Stop <span class="inl">jugaad-lab-server</span> as the intern</label>
           <div class="detail"><p><b>Instance state → Stop instance</b> works. <span class="pill a">ALLOW</span> Stop lab. (Start it again.)</p></div></div>
-        <div class="task"><input type="checkbox" id="t3h" data-task data-proof><label for="t3h">Now try to stop <span class="inl">jugaad-prod-server</span></label>
+        <div class="task"><input type="checkbox" id="t3h" data-task><label for="t3h">Now try to stop <span class="inl">jugaad-prod-server</span></label>
           <div class="detail"><p>Red banner: <i>"You are not authorized to perform: ec2:StopInstances"</i>. <span class="pill d">DENY</span> Stop prod. Same user, same action, different tag.</p></div></div>
         <div class="task"><input type="checkbox" id="t3i" data-task><label for="t3i">Try <b>Instance state → Terminate</b> on the lab server, then open the S3 console</label>
           <div class="detail"><p>Both <span class="pill d">DENY</span>. Nobody granted those actions, so the default applies.</p></div></div>
-        <div class="task"><input type="checkbox" id="t3j" data-task data-proof><label for="t3j"><b>Tag experiment:</b> as admin change the lab server's <span class="inl">Env</span> tag to <span class="inl">dev</span>. Retry Stop as the intern, then change it back to <span class="inl">lab</span></label>
+        <div class="task"><input type="checkbox" id="t3j" data-task><label for="t3j"><b>Tag experiment:</b> as admin change the lab server's <span class="inl">Env</span> tag to <span class="inl">dev</span>. Retry Stop as the intern, then change it back to <span class="inl">lab</span></label>
           <div class="detail"><p>Same user, same policy, different tag → DENY. That's tag-based access control (ABAC) in action.</p></div></div>
         <div class="concept"><h4>How AWS decides: ALLOW vs DENY</h4>
           <div class="flow"><div>Request arrives</div>→<div>Any matching explicit <b>Deny</b>?</div>→<div class="x">Yes → DENY</div><div>No →</div><div>Any matching <b>Allow</b>?</div>→<div class="y">Yes → ALLOW</div><div class="x">No → implicit DENY</div></div>
@@ -387,7 +387,7 @@
 
         <h3 class="prove">🎯 Prove it: log in as the viewer</h3>
         <div class="task"><input type="checkbox" id="t4c" data-task><label for="t4c">Sign the intern out, then log in to the incognito window as <span class="inl">jugaad-viewer</span></label></div>
-        <div class="task"><input type="checkbox" id="t4d" data-task data-proof><label for="t4d">View EC2 → Instances <span class="pill a">ALLOW</span>, then try to stop the <b>lab</b> server <span class="pill d">DENY</span></label>
+        <div class="task"><input type="checkbox" id="t4d" data-task><label for="t4d">View EC2 → Instances <span class="pill a">ALLOW</span>, then try to stop the <b>lab</b> server <span class="pill d">DENY</span></label>
           <div class="detail"><p>The intern could stop lab; the viewer can't. Two users, two groups, two policies, two different results from the same screen.</p></div></div>
         <div class="check">Viewer can look, can't touch.</div>
       </section>
@@ -418,9 +418,9 @@
         <h3 class="prove">🎯 Prove it: log in with the code</h3>
         <div class="task"><input type="checkbox" id="t5e" data-task><label for="t5e">In the incognito window sign out, then start logging in as <span class="inl">jugaad-intern</span></label>
           <div class="detail"><p>After the password a new screen asks for an <b>MFA code</b>. A thief with only the password stops here.</p></div></div>
-        <div class="task"><input type="checkbox" id="t5f" data-task data-proof><label for="t5f">Type a <b>wrong</b> code first (e.g. 000000)</label>
+        <div class="task"><input type="checkbox" id="t5f" data-task><label for="t5f">Type a <b>wrong</b> code first (e.g. 000000)</label>
           <div class="detail"><p>AWS rejects it. Now open your phone, read the real 6-digit code, and enter it before it refreshes.</p></div></div>
-        <div class="task"><input type="checkbox" id="t5g" data-task data-proof><label for="t5g">You're in as the intern. Stop the lab server once more to confirm permissions still work</label></div>
+        <div class="task"><input type="checkbox" id="t5g" data-task><label for="t5g">You're in as the intern. Stop the lab server once more to confirm permissions still work</label></div>
         <div class="check">Logging in as the intern now needs <b>password + phone</b>. Permissions are unchanged. MFA only protects <i>who gets in</i>.</div>
         <div class="callout jugaad"><b class="t">Jugaad tip</b><p>Do this for your own admin user too, and for the root user. In real companies you can even write policies that <i>deny everything unless MFA was used</i>, using the condition <span class="inl">aws:MultiFactorAuthPresent</span>.</p></div>
       </section>
@@ -481,9 +481,9 @@
         <div class="task"><input type="checkbox" id="t6f" data-task><label for="t6f">Log in as the intern (password + phone code). Confirm <b>stop prod</b> is still <span class="pill d">DENY</span></label></div>
         <div class="task"><input type="checkbox" id="t6g" data-task><label for="t6g">Top-right menu → <b>Switch role</b> → Account = your ID or alias, Role = <span class="inl">JugaadProdOperator</span> → <b>Switch Role</b></label>
           <div class="detail"><p>The top bar now shows the role name instead of the intern's name.</p></div></div>
-        <div class="task"><input type="checkbox" id="t6h" data-task data-proof><label for="t6h">Now stop <span class="inl">jugaad-prod-server</span>, then start it again <span class="pill a">ALLOW</span></label>
+        <div class="task"><input type="checkbox" id="t6h" data-task><label for="t6h">Now stop <span class="inl">jugaad-prod-server</span>, then start it again <span class="pill a">ALLOW</span></label>
           <div class="detail"><p>The intern just did what he was denied minutes ago, with <b>temporary</b> credentials and no change to his own permissions.</p></div></div>
-        <div class="task"><input type="checkbox" id="t6i" data-task data-proof><label for="t6i">Try to stop the <b>lab</b> server while in the role</label>
+        <div class="task"><input type="checkbox" id="t6i" data-task><label for="t6i">Try to stop the <b>lab</b> server while in the role</label>
           <div class="detail"><p><span class="pill d">DENY</span>. While you wear a role you give up your own permissions and have only the role's. Then use <b>Switch back</b> from the menu, and prod is denied again.</p></div></div>
         <div class="check">Roles give powerful access that is temporary, auditable (CloudTrail logs who assumed it) and revocable.</div>
         <details class="stuck"><summary>Feeling stuck? Switch role fails</summary>
@@ -509,7 +509,7 @@
         <div class="mission"><b class="t">Mission briefing</b>
           <p>Testing by clicking is slow and risky. Professionals <b>simulate</b> permissions. Prove the intern's access without logging in as him.</p></div>
         <div class="concept"><h4>What is the IAM Policy Simulator?</h4><p>A tool that evaluates policies against actions you choose, and tells you allowed / denied and <i>which statement</i> decided. No real API calls are made, so nothing gets stopped or deleted.</p></div>
-        <div class="task"><input type="checkbox" id="t7a" data-task data-proof><label for="t7a">Open <a href="https://policysim.aws.amazon.com" target="_blank" rel="noopener">policysim.aws.amazon.com</a> as admin → Users → <span class="inl">jugaad-intern</span></label>
+        <div class="task"><input type="checkbox" id="t7a" data-task><label for="t7a">Open <a href="https://policysim.aws.amazon.com" target="_blank" rel="noopener">policysim.aws.amazon.com</a> as admin → Users → <span class="inl">jugaad-intern</span></label>
           <div class="detail"><p>Select service <b>Amazon EC2</b>, actions <span class="inl">DescribeInstances</span>, <span class="inl">StopInstances</span>, <span class="inl">TerminateInstances</span> → <b>Run simulation</b>. Compare with what you saw live.</p>
           <details class="hint"><summary>Why might StopInstances show "denied" here?</summary><p>The simulator doesn't know your instance's tag unless you tell it. Our policy only allows when <span class="inl">aws:ResourceTag/Env = lab</span>. Add that as a context key in the simulator settings. Missing information = condition not met = deny.</p></details></div></div>
         <div class="task"><input type="checkbox" id="t7b">
@@ -585,7 +585,7 @@ aws iam simulate-principal-policy \
   </footer>
 </div>
 
-<script src="config.js?v=15"></script>
-<script src="app.js?v=15"></script>
+<script src="config.js?v=17"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>
