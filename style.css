@@ -1,6 +1,6 @@
 :root{
-  --orange:#F2561D; --orange-d:#c9420f; --tint:#fdeee6;
-  --ink:#2a2623; --muted:#7a716a; --line:#e6dfd7; --bg:#f7f4ef; --card:#fffdfa;
+  --orange:#F2561D; --orange-d:#b5390b; --tint:#fdeee6;
+  --ink:#2a2623; --muted:#6a615a; --line:#e6dfd7; --bg:#f7f4ef; --card:#fffdfa;
   --ok:#2f8f55; --bad:#c8372d;
   --serif:'Playfair Display',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',Consolas,monospace;
 }
@@ -218,3 +218,33 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:.9rem 0 .25rem}
 .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 .code code,.task .code code{background:none;padding:0;border-radius:0;font-size:inherit;color:inherit}
+
+/* contrast fixes (WCAG AA) */
+.btn,#userBtn .av,.avatar{background:#d2400e}
+.btn:hover{background:#b5390b}
+.brand b,.hero li span{color:var(--orange-d)}
+.hero h1 em{color:#d2400e}
+.q button.opt,.q button.opt:disabled{color:var(--ink);opacity:1;-webkit-text-fill-color:var(--ink)}
+.q button.opt:disabled{cursor:default}
+
+/* mobile top bar */
+#menuBtn{white-space:nowrap}
+@media(max-width:600px){
+  header.top{gap:.5rem;padding:.6rem .8rem}
+  .brand{font-size:.95rem}
+  .brand .chip{display:none}
+  .pbar{width:44px;flex:none}
+  .pct{min-width:2.4rem;font-size:.78rem}
+  #menuBtn{padding:.3rem .7rem;font-size:.8rem}
+  #userBtn{padding:.2rem .5rem .2rem .25rem}
+}
+
+/* never let long URLs/codes widen the page */
+.inl,.task code,main p,main li,main td{overflow-wrap:anywhere}
+html,body{overflow-x:hidden}
+@media(max-width:600px){.pbar{display:none}.pct{min-width:auto}}
+.task{grid-template-columns:auto minmax(0,1fr)}
+.task .detail,.task label{min-width:0}
+details.options>.body,details.concept>.body{overflow-x:auto;min-width:0}
+.options tr.pick td:first-child:after{white-space:normal}
+@media(max-width:600px){.options table,table.ad{font-size:.8rem}table th,table td{padding:.45rem .4rem}}
