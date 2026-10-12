@@ -6,6 +6,8 @@
   const state = JSON.parse(localStorage.getItem(KEY) || "{}");
   state.tasks = state.tasks || {};
   state.quiz = state.quiz || {};
+  state.proof = state.proof || {};
+  state.up = state.up || {};
   const save = () => localStorage.setItem(KEY, JSON.stringify(state));
 
   // ---------- server helpers ----------
@@ -22,6 +24,99 @@
     } catch { return null; } finally { clearTimeout(t); }
   }
   const payload = () => ({ ...state.user, consent: "yes", source: location.hostname });
+
+  // ---------- game: points, ranks, toast ----------
+  const RANKS = [[0, "Cloud Rookie"], [0.2, "IAM Apprentice"], [0.45, "Policy Padawan"], [0.7, "Access Architect"], [0.9, "Jugaad SRE Legend"]];
+  function score() {
+    const ids = $$("[data-task]").map(t => t.id);
+    const proofIds = $$("[data-proof]").map(t => t.id);
+    const done = ids.filter(id => state.tasks[id]).length;
+    const shots = proofIds.filter(id => state.tasks[id] && state.proof[id]).length;
+    const quizOk = QUIZ.filter((q, i) => state.quiz[i] === q.a).length;
+    const max = (ids.length + proofIds.length + QUIZ.length) * 5;
+    const total = (done + shots + quizOk) * 5;
+    let rank = RANKS[0][1];
+    RANKS.forEach(([min, name]) => { if (total / max >= min) rank = name; });
+    return { done, nTasks: ids.length, shots, nProof: proofIds.length, quizOk, nQuiz: QUIZ.length, total, max, rank };
+  }
+  const extras = () => ({
+    points: score().total,
+    proofs: Object.keys(state.proof).filter(k => state.proof[k]).join(","),
+    quiz: Object.keys(state.quiz).map(k => k + ":" + state.quiz[k]).join(",")
+  });
+  let toastT;
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1900);
+  }
+  function renderScore() {
+    const s = score();
+    $("#ptsVal").textContent = s.total;
+    $("#mpts").textContent = s.total + " / " + s.max;
+    $("#mrank").textContent = s.rank;
+    $("#scoreCard").innerHTML =
+      `<div class="big">${s.total} <small style="font-size:1rem;color:#ffd9c7">/ ${s.max} pts</small></div><span class="rk">🏆 ${s.rank}</span>` +
+      `<table style="margin-top:.8rem"><tr><td>Tasks completed</td><td>${s.done} / ${s.nTasks} × 5</td><td><b>${s.done * 5}</b></td></tr>` +
+      `<tr><td>📸 Screenshot bonuses</td><td>${s.shots} / ${s.nProof} × 5</td><td><b>${s.shots * 5}</b></td></tr>` +
+      `<tr><td>Quiz answers right</td><td>${s.quizOk} / ${s.nQuiz} × 5</td><td><b>${s.quizOk * 5}</b></td></tr></table>`;
+  }
+
+  // ---------- screenshot proofs ----------
+  const imgKey = () => "jugaad-proofimg-" + state.user.email;
+  const getImgs = () => { try { return JSON.parse(localStorage.getItem(imgKey()) || "{}"); } catch { return {}; } };
+  const putImg = (id, d) => {
+    const m = getImgs(); if (d) m[id] = d; else delete m[id];
+    try { localStorage.setItem(imgKey(), JSON.stringify(m)); } catch { toast("Device storage is full, screenshot kept online only"); }
+  };
+  function shrink(file, max = 1000, q = 0.68) {
+    return new Promise((res, rej) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const cv = document.createElement("canvas"); cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url); res(cv.toDataURL("image/jpeg", q));
+      };
+      img.onerror = rej; img.src = url;
+    });
+  }
+  async function upload(id, dataUrl) {
+    const r = await api({ type: "proof", ...payload(), task: id, image: dataUrl });
+    if (r && r.ok) { state.up[id] = true; save(); }
+  }
+  function renderProof(box, id) {
+    const imgs = getImgs(), has = state.proof[id];
+    box.classList.toggle("done", !!has);
+    if (has) {
+      box.innerHTML = (imgs[id] ? `<img src="${imgs[id]}" alt="your screenshot">` : "") +
+        `<div class="pb-t"><b>Screenshot attached ✓</b> +5 bonus${state.tasks[id] ? "" : " (tick the task to count it)"}</div><button class="ghost" type="button">Remove</button>`;
+      $("button", box).onclick = () => { state.proof[id] = false; delete state.up[id]; putImg(id, null); save(); renderProof(box, id); refresh(); syncProgress(); };
+    } else {
+      box.innerHTML = `<div class="pb-t">📸 <b>+5 bonus:</b> attach a screenshot of this step. Click the box and press <b>Ctrl+V</b> to paste, or choose a file.</div><label class="pbtn">Choose image<input type="file" accept="image/*" hidden></label>`;
+      $("input", box).onchange = e => attach(id, e.target.files[0], box);
+    }
+  }
+  async function attach(id, file, box) {
+    if (!file || !file.type.startsWith("image/")) return toast("Please choose an image file");
+    let d; try { d = await shrink(file); } catch { return toast("Couldn't read that image"); }
+    putImg(id, d); state.proof[id] = true; delete state.up[id]; save();
+    renderProof(box, id); refresh(); upload(id, d); syncProgress();
+    toast(state.tasks[id] ? "📸 +5 bonus points!" : "📸 Saved. Tick the task to earn the bonus");
+  }
+  function buildProofs() {
+    $$("[data-proof]").forEach(inp => {
+      const task = inp.closest(".task"), box = document.createElement("div");
+      box.className = "proofbox"; box.tabIndex = 0; task.appendChild(box);
+      renderProof(box, inp.id);
+      box.addEventListener("paste", e => {
+        const it = [...(e.clipboardData ? e.clipboardData.items : [])].find(i => i.type.startsWith("image/"));
+        if (it) { e.preventDefault(); attach(inp.id, it.getAsFile(), box); }
+      });
+    });
+    // retry uploads that failed earlier (e.g. offline)
+    const imgs = getImgs();
+    Object.keys(state.proof).filter(id => state.proof[id] && !state.up[id] && imgs[id]).forEach(id => upload(id, imgs[id]));
+  }
   const doneIds = () => Object.keys(state.tasks).filter(k => state.tasks[k]).join(",");
 
   // save progress to the sheet (debounced). Also re-creates the row if it is missing.
@@ -31,7 +126,7 @@
     clearTimeout(syncT);
     syncT = setTimeout(() => {
       const p = pct().p;
-      api({ type: p === 100 ? "completed" : "progress", ...payload(), progress: p, tasks: doneIds() });
+      api({ type: p === 100 ? "completed" : "progress", ...payload(), progress: p, tasks: doneIds(), ...extras() });
     }, 1500);
   }
 
@@ -86,7 +181,7 @@
       year: v("year"), college: v("college"), linkedin: v("linkedin"), consent: true
     };
     const bk = loadBackup(state.user.email);
-    if (bk) { state.tasks = bk.tasks || {}; state.quiz = bk.quiz || {}; }
+    if (bk) { state.tasks = bk.tasks || {}; state.quiz = bk.quiz || {}; state.proof = bk.proof || {}; }
     save();
     // server de-duplicates by email: an existing email just continues, no second row
     await api({ type: "signup", ...payload(), progress: 0, tasks: doneIds() });
@@ -104,10 +199,12 @@
     busy(btn, true, "Checking…");
     const r = await api({ type: "login", email, whatsapp: wa });
     const bk = loadBackup(email);
-    let user = null, tasks = {};
+    let user = null, tasks = {}, proof = {}, quiz = {};
     if (r && r.ok) {
       user = { name: r.name, email: r.email, whatsapp: r.whatsapp, college: r.college, year: r.year, linkedin: r.linkedin, consent: true };
       String(r.tasks || "").split(",").filter(Boolean).forEach(id => (tasks[id] = true));
+      String(r.proofs || "").split(",").filter(Boolean).forEach(id => (proof[id] = true));
+      String(r.quiz || "").split(",").filter(Boolean).forEach(kv => { const [k, v] = kv.split(":"); quiz[k] = +v; });
     } else if (!r && bk && bk.user && digits(bk.user.whatsapp) === digits(wa)) {
       user = bk.user; // server unreachable: fall back to this device's saved copy
     }
@@ -115,7 +212,10 @@
     if (!user) return err(r ? "We couldn't find that email + WhatsApp. Check them, or use Register." : "Couldn't reach the server. Check your internet and try again.");
     state.user = user;
     state.tasks = { ...(bk ? bk.tasks : {}), ...tasks };
-    state.quiz = bk ? bk.quiz || {} : {};
+    state.quiz = { ...(bk ? bk.quiz : {}), ...quiz };
+    state.proof = { ...(bk ? bk.proof : {}), ...proof };
+    state.up = {};
+    Object.keys(proof).forEach(id => (state.up[id] = true));
     save();
     showApp();
   });
@@ -132,6 +232,7 @@
     $("#pfill").style.width = p + "%";
     $("#ptext").textContent = p + "%";
     $("#mprog").textContent = p + "%";
+    renderScore();
     $$(".module").forEach(m => {
       const t = $$("[data-task]", m);
       const link = $(`nav.side a[href="#${m.id}"]`);
@@ -184,11 +285,15 @@
       c.closest(".task").classList.toggle("checked", c.checked);
       c.addEventListener("change", () => {
         state.tasks[c.id] = c.checked; save();
+        toast(c.checked ? "+5 pts · nice one! ⭐" : "−5 pts");
+        const pb = c.closest(".task").querySelector(".proofbox"); if (pb) renderProof(pb, c.id);
         c.closest(".task").classList.toggle("checked", c.checked);
         refresh();
         syncProgress();
       });
     });
+
+    buildProofs();
 
     // copy buttons
     $$(".code .copy").forEach(b => b.addEventListener("click", async () => {
@@ -222,7 +327,7 @@
         $$(".opt", d).forEach((b, i) => { b.disabled = true; if (i === it.a) b.classList.add("right"); else if (i === pick) b.classList.add("wrong"); });
         $(".why", d).style.display = "block";
       };
-      $$(".opt", d).forEach(b => b.onclick = () => { const p = +b.dataset.o; state.quiz[qi] = p; save(); mark(p); });
+      $$(".opt", d).forEach(b => b.onclick = () => { const p = +b.dataset.o; state.quiz[qi] = p; save(); mark(p); refresh(); syncProgress(); toast(p === it.a ? "✅ Correct! +5 pts" : "Not quite, no points"); });
       if (state.quiz[qi] !== undefined) mark(state.quiz[qi]);
       box.appendChild(d);
     });
@@ -258,6 +363,7 @@
     g.fillStyle = "#3a3430"; g.font = "400 26px Inter, sans-serif";
     g.fillText("EC2 · IAM Users, Groups & Policies · ALLOW vs DENY", 90, 590);
     g.fillText(`${C.EVENT_DATE || ""} · AWS Student Builder Group NMIET`, 90, 630);
+    const sc = score(); g.fillStyle = "#b5390b"; g.font = "700 30px Inter, sans-serif"; g.fillText(`Score: ${sc.total} / ${sc.max} pts · ${sc.rank}`, 90, 690);
     g.fillStyle = "#14110f"; g.font = "700 28px Inter, sans-serif"; g.fillText(C.SPEAKER || "Shobhit Verma", 90, 735);
     g.fillStyle = "#6b635d"; g.font = "400 20px Inter, sans-serif"; g.fillText("SRE & Platform Engineering · Creator @TheJugaadSRE", 90, 765);
     $("#certWrap").style.display = "block";
@@ -268,7 +374,7 @@
   // sign out / switch user (also via ?reset in the URL)
   const signOut = () => {
     if (state.user) {
-      localStorage.setItem(PKEY(state.user.email), JSON.stringify({ user: state.user, tasks: state.tasks, quiz: state.quiz }));
+      localStorage.setItem(PKEY(state.user.email), JSON.stringify({ user: state.user, tasks: state.tasks, quiz: state.quiz, proof: state.proof }));
       localStorage.setItem(LAST, state.user.email);
     }
     localStorage.removeItem(KEY);
