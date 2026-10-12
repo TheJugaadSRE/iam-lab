@@ -41,13 +41,101 @@
     quiz: Object.keys(state.quiz).map(k => k + ":" + state.quiz[k]).join(",")
   });
   let toastT;
-  function toast(msg) {
+  function toast(msg, ms = 1900) {
     const t = $("#toast"); t.textContent = msg; t.classList.add("on");
-    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1900);
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms);
   }
+
+  // ---------- TheJugaad World: map, effects, sound ----------
+  const CODE = { m1: "1-1", m2: "1-2", m3: "1-3", m4: "1-4", m5: "2-1", m6: "2-2", m7: "2-3", m8: "2-4", m9: "BOSS", m10: "GOAL" };
+  const MAPNAME = { m1: "EC2", m2: "Users", m3: "Policy", m4: "Viewer", m5: "MFA", m6: "Roles", m7: "Bonus", m8: "Castle", m9: "Quiz", m10: "Cert" };
+  const SND = { coin: [[988, .07], [1319, .18]], win: [[523, .1], [659, .1], [784, .1], [1047, .32]], bad: [[196, .18]] };
+  const sndOn = () => localStorage.getItem("jugaad-snd") === "1";
+  let audio;
+  function beep(notes) {
+    if (!sndOn()) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      let t = audio.currentTime;
+      notes.forEach(([f, d]) => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.type = "square"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+        o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d); t += d * 0.9;
+      });
+    } catch {}
+  }
+  function coinFx(el) {
+    const r = el.getBoundingClientRect(), d = document.createElement("div");
+    d.className = "coinfx"; d.textContent = "🪙 +5";
+    d.style.left = r.left + "px"; d.style.top = r.top + "px";
+    document.body.appendChild(d); setTimeout(() => d.remove(), 950);
+  }
+  function confetti() {
+    const em = ["🪙", "⭐", "🟧", "🟨", "🎉"];
+    for (let i = 0; i < 26; i++) {
+      const e = document.createElement("div");
+      e.className = "confetti"; e.textContent = em[i % em.length];
+      e.style.left = Math.random() * 100 + "vw"; e.style.animationDelay = Math.random() * 0.6 + "s";
+      e.style.fontSize = 0.9 + Math.random() * 0.9 + "rem";
+      document.body.appendChild(e); setTimeout(() => e.remove(), 3000);
+    }
+  }
+  function celebrate(msg) { toast(msg, 3000); confetti(); beep(SND.win); }
+
+  // original pixel mascot (a hard-hat SRE) drawn from a tiny grid
+  function mascotEl() {
+    if (mascotEl.el) return mascotEl.el;
+    const rows = ["....oooo....", "..oooooooo..", "..oooooooo..", ".hhhhhhhhhh.", "..ssssssss..", "..skssssks..", "..ssssssss..",
+      "...ssswss...", "..bbbbbbbb..", ".bbbbbbbbbb.", ".sbbbbbbbbs.", "..bbbbbbbb..", "..hh....hh..", ".hhh....hhh."];
+    const col = { o: "#f2561d", h: "#2a2623", s: "#f5c9a0", k: "#000", w: "#fff", b: "#2563eb" };
+    let r = "";
+    rows.forEach((row, y) => [...row].forEach((ch, x) => { if (col[ch]) r += `<rect x="${x * 3}" y="${y * 3}" width="3" height="3" fill="${col[ch]}"/>`; }));
+    const d = document.createElement("div"); d.className = "mascot";
+    d.innerHTML = `<svg width="36" height="42" viewBox="0 0 36 42" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+    return (mascotEl.el = d);
+  }
+  function buildWorld() {
+    const map = $("#worldMap"); if (!map) return;
+    map.innerHTML = '<div class="path">' + Object.keys(CODE).map(id =>
+      `<a class="wnode" href="#${id}" data-m="${id}"><span class="dot"></span><span class="lab">${CODE[id]}</span><span class="nm">${MAPNAME[id]}</span></a>`).join("") + "</div>";
+  }
+  function moduleDone(id) {
+    if (id === "m9") return Object.keys(state.quiz).length >= QUIZ.length;
+    if (id === "m10") return certReady();
+    const t = $$("[data-task]", $("#" + id));
+    return t.length > 0 && t.every(c => c.checked);
+  }
+  function updateWorld() {
+    const ids = Object.keys(CODE);
+    ids.forEach((id, i) => {
+      const n = $(`.wnode[data-m="${id}"]`); if (!n) return;
+      const d = moduleDone(id);
+      n.classList.toggle("done", d); n.classList.remove("cur");
+      $(".dot", n).textContent = d ? "★" : id === "m10" ? "🚩" : id === "m8" ? "🏰" : id === "m9" ? "👾" : i + 1;
+    });
+    const cur = ids.find(id => !moduleDone(id));
+    const node = $(`.wnode[data-m="${cur || "m10"}"]`);
+    if (node) { node.classList.add("cur"); node.appendChild(mascotEl()); }
+    $("#worldVal").textContent = cur ? CODE[cur] : "GOAL";
+    $("#coinsVal").textContent = pct().done;
+    $$(".mcoins").forEach(el => {
+      const t = $$("[data-task]", $("#" + el.dataset.m));
+      el.textContent = "🪙 " + t.filter(c => c.checked).length + "/" + t.length;
+    });
+  }
+  const certReady = () => { const { done, total } = pct(); return done >= Math.ceil(total * CERT_AT); };
+  function levelCheck(c) {
+    const mod = c.closest(".module"); state.cleared = state.cleared || {};
+    const all = $$("[data-task]", mod).every(x => x.checked);
+    if (c.checked && all && !state.cleared[mod.id]) { state.cleared[mod.id] = true; save(); celebrate(`🚩 WORLD ${CODE[mod.id] || ""} CLEARED!`); }
+    else if (!c.checked && state.cleared[mod.id]) { state.cleared[mod.id] = false; save(); }
+    if (certReady() && !state.certFx) { state.certFx = true; save(); celebrate("🎓 CERTIFICATE UNLOCKED!"); }
+  }
+
   function renderScore() {
     const s = score();
-    $("#ptsVal").textContent = s.total;
+    $("#ptsVal").textContent = String(s.total).padStart(5, "0");
     $("#mpts").textContent = s.total + " / " + s.max;
     $("#mrank").textContent = s.rank;
     $("#scoreCard").innerHTML =
@@ -168,6 +256,7 @@
     $("#ptext").textContent = p + "%";
     $("#mprog").textContent = p + "%";
     renderScore();
+    updateWorld();
     $$(".module").forEach(m => {
       const t = $$("[data-task]", m);
       const link = $(`nav.side a[href="#${m.id}"]`);
@@ -203,7 +292,7 @@
     $$(".module").forEach((m, i) => {
       const a = document.createElement("a");
       a.href = "#" + m.id;
-      a.innerHTML = `<span class="dot"></span>${i}. ${m.dataset.title}`;
+      a.innerHTML = `<span class="dot"></span>${CODE[m.id] || "START"} · ${m.dataset.title}`;
       a.onclick = () => toggle(false);
       nav.appendChild(a);
     });
@@ -216,6 +305,17 @@
     }), { rootMargin: "-30% 0px -60% 0px" });
     $$(".module").forEach(m => io.observe(m));
 
+    // per-world coin counters + map + sound toggle
+    $$(".module").forEach(m => {
+      if (!$$("[data-task]", m).length) return;
+      const s = document.createElement("span"); s.className = "mcoins"; s.dataset.m = m.id;
+      const tag = $(".tag", m); if (tag) tag.after(s);
+    });
+    buildWorld();
+    const snd = $("#sndBtn"), paint = () => (snd.textContent = sndOn() ? "🔊" : "🔇");
+    snd.onclick = () => { localStorage.setItem("jugaad-snd", sndOn() ? "0" : "1"); paint(); beep(SND.coin); };
+    paint();
+
     // tasks
     $$("[data-task]").forEach(c => {
       c.checked = !!state.tasks[c.id];
@@ -223,8 +323,10 @@
       c.addEventListener("change", () => {
         state.tasks[c.id] = c.checked; save();
         toast(c.checked ? "+5 pts · nice one! ⭐" : "−5 pts");
+        if (c.checked) { coinFx(c); beep(SND.coin); }
         c.closest(".task").classList.toggle("checked", c.checked);
         refresh();
+        levelCheck(c);
         syncProgress();
       });
     });
@@ -261,7 +363,8 @@
         $$(".opt", d).forEach((b, i) => { b.disabled = true; if (i === it.a) b.classList.add("right"); else if (i === pick) b.classList.add("wrong"); });
         $(".why", d).style.display = "block";
       };
-      $$(".opt", d).forEach(b => b.onclick = () => { const p = +b.dataset.o; state.quiz[qi] = p; save(); mark(p); refresh(); syncProgress(); toast(p === it.a ? "✅ Correct! +5 pts" : "Not quite, no points"); });
+      $$(".opt", d).forEach(b => b.onclick = () => { const p = +b.dataset.o; state.quiz[qi] = p; save(); mark(p); refresh(); syncProgress(); toast(p === it.a ? "✅ Correct! +5 pts" : "Not quite, no points"); beep(p === it.a ? SND.coin : SND.bad);
+        if (Object.keys(state.quiz).length >= QUIZ.length && !state.bossFx) { state.bossFx = true; save(); celebrate("👾 BOSS DEFEATED!"); } });
       if (state.quiz[qi] !== undefined) mark(state.quiz[qi]);
       box.appendChild(d);
     });
@@ -300,6 +403,7 @@
     const sc = score(); g.fillStyle = "#b5390b"; g.font = "700 30px Inter, sans-serif"; g.fillText(`Score: ${sc.total} / ${sc.max} pts · ${sc.rank}`, 90, 690);
     g.fillStyle = "#14110f"; g.font = "700 28px Inter, sans-serif"; g.fillText(C.SPEAKER || "Shobhit Verma", 90, 735);
     g.fillStyle = "#6b635d"; g.font = "400 20px Inter, sans-serif"; g.fillText("SRE & Platform Engineering · Creator @TheJugaadSRE", 90, 765);
+    g.fillStyle = "#6b635d"; g.font = "600 18px Inter, sans-serif"; g.fillText("TheJugaad World · AWS IAM Edition · A game by Shobhit Verma", 90, 800);
     $("#certWrap").style.display = "block";
     $("#certDl").href = cv.toDataURL("image/png");
     $("#certWrap").scrollIntoView({ behavior: "smooth", block: "center" });

@@ -3,38 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cloud Security with AWS IAM – Hands-on Lab | TheJugaadSRE</title>
+<title>TheJugaad World · AWS IAM Edition | TheJugaadSRE</title>
 <meta name="description" content="Interactive hands-on lab: launch EC2, build IAM users, groups & policies, and test real ALLOW vs DENY scenarios. By TheJugaadSRE.">
-<meta property="og:title" content="Cloud Security with AWS IAM – Hands-on Lab | TheJugaadSRE">
+<meta property="og:title" content="TheJugaad World · AWS IAM Edition | TheJugaadSRE">
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=18">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
 <!-- ============ SIGN-UP GATE ============ -->
 <section id="gate">
-  <button type="button" class="pill-btn" id="loginBtn">Login</button>
+  <button type="button" class="pill-btn" id="loginBtn">Login ▶</button>
   <div class="hero">
     <div class="brand"><span class="chip"></span>TheJugaad<b>SRE</b></div>
-    <p class="eyebrow" style="margin-top:2rem">Hands-on lab · AWS Student Builder Group NMIET</p>
-    <h1>Cloud Security<br>with <em>AWS IAM</em></h1>
-    <p class="lead">Don't just read about permissions. Launch an instance, create users, write a policy, then watch AWS say <b>ALLOW</b> and <b>DENY</b> in real time.</p>
+    <p class="eyebrow" style="margin-top:2rem">TheJugaadSRE presents</p>
+    <h1>TheJugaad<br><em>World</em></h1>
+    <p class="sub2">AWS IAM Edition · Cloud Security, level by level</p>
+    <p class="lead" style="margin-top:1.2rem">Clear 8 worlds. Launch servers, build users, write policies, scan an MFA code, and watch AWS say <b>ALLOW</b> and <b>DENY</b>. Collect coins, beat the boss quiz and grab the goal flag.</p>
     <ul>
-      <li><span>01</span> Launch an EC2 instance</li>
-      <li><span>02</span> Create IAM Users &amp; Groups</li>
-      <li><span>03</span> Write &amp; attach Policies</li>
-      <li><span>04</span> Test ALLOW vs DENY</li>
+      <li><span>1-1</span> Launch EC2 servers</li>
+      <li><span>1-2</span> Create users</li>
+      <li><span>1-3</span> Write policies</li>
+      <li><span>2-2</span> Switch roles</li>
     </ul>
-    <div class="speaker"><div class="avatar">SV</div><div><b style="color:var(--ink)">Shobhit Verma</b><br>SRE &amp; Platform Engineering · Creator @TheJugaadSRE</div></div>
+    <div class="speaker"><div class="avatar">SV</div><div><b style="color:var(--ink)">A game by Shobhit Verma</b><br>SRE &amp; Platform Engineering · Creator @TheJugaadSRE<br>AWS Student Builder Group NMIET</div></div>
   </div>
 
   <div class="formwrap">
   <form class="formcard" id="leadForm" novalidate>
-    <div class="tabs"><button type="button" data-tab="reg" class="on">Register</button><button type="button" data-tab="log">Login</button></div>
-    <h2>Unlock the lab</h2>
-    <small>Free. Takes 20 seconds. Your progress is saved on this device.</small>
+    <div class="tabs"><button type="button" data-tab="reg" class="on">New player</button><button type="button" data-tab="log">Login</button></div>
+    <h2>Player 1, press start</h2>
+    <small>Free. Takes 20 seconds. Your game is saved on this device.</small>
     <label class="f" for="name">Full name *</label>
     <input type="text" id="name" name="name" autocomplete="name" required>
     <label class="f" for="email">Email *</label>
@@ -51,21 +52,22 @@
     <label class="consent"><input type="checkbox" id="consent">
       <span>I agree to share my details with TheJugaadSRE and be contacted by email / WhatsApp. I can opt out anytime.</span></label>
     <p class="err" id="formErr"></p>
-    <button class="btn full" type="submit">Start the lab →</button>
+    <button class="btn full" type="submit">Start game ▶</button>
     
   </form>
   <form class="formcard" id="loginForm" novalidate hidden>
-    <div class="tabs"><button type="button" data-tab="reg">Register</button><button type="button" data-tab="log" class="on">Login</button></div>
-    <h2>Welcome back</h2>
+    <div class="tabs"><button type="button" data-tab="reg">New player</button><button type="button" data-tab="log" class="on">Login</button></div>
+    <h2>Welcome back, player</h2>
     <small>Enter the email and WhatsApp number you registered with. You won't be registered again.</small>
     <label class="f" for="lemail">Email</label>
     <input type="email" id="lemail" autocomplete="email" required>
     <label class="f" for="lwhatsapp">WhatsApp number</label>
     <input type="tel" id="lwhatsapp" autocomplete="tel" required>
     <p class="err" id="loginErr"></p>
-    <button class="btn full" type="submit">Login →</button>
+    <button class="btn full" type="submit">Continue ▶</button>
   </form>
   </div>
+  <div class="ground"></div>
 </section>
 
 <!-- ============ APP ============ -->
@@ -76,8 +78,10 @@
     <button id="menuBtn" aria-label="Contents">☰ Contents</button>
     <div class="brand"><span class="chip"></span>TheJugaad<b>SRE</b></div>
     <div class="grow"></div>
+    <div class="hud"><span>🪙 ×<b id="coinsVal">0</b></span><span>WORLD <b id="worldVal">1-1</b></span></div>
     <div class="pbar"><i id="pfill"></i></div><div class="pct" id="ptext">0%</div>
-    <div class="pts" title="Your points">⭐ <b id="ptsVal">0</b></div>
+    <div class="pts" title="Your score"><span class="lbl">SCORE</span><b id="ptsVal">00000</b></div>
+    <button id="sndBtn" type="button" title="Sound effects" aria-label="Toggle sound">🔇</button>
     <div class="user" id="userMenu">
       <button type="button" id="userBtn" aria-haspopup="true" aria-expanded="false"><span class="av" id="uav">S</span><span id="uname">Hi</span><span class="car">▾</span></button>
       <div class="menu" id="menu" hidden>
@@ -99,7 +103,7 @@
 
       <!-- ===== 0 INTRO ===== -->
       <section class="module" id="m0" data-title="Introduction">
-        <span class="tag">Cloud Beginner Challenge</span>
+        <span class="tag">★ Press start ★</span>
         <h2>Cloud Security with AWS IAM</h2>
         <p class="sub">Let's use IAM to control access to our AWS resources.</p>
         <p class="mini">Welcome, <b id="hello">builder</b> 👋 · by Shobhit Verma · TheJugaadSRE</p>
@@ -110,6 +114,9 @@
           <div><i>$</i><span><b>Cost</b> Free tier</span></div>
           <div><i>☁</i><span><b>Region</b> ap-south-1</span></div>
         </div>
+
+        <h3 class="mapt">🗺 World map</h3>
+        <div class="wmap" id="worldMap"></div>
 
         <div class="sumhead"><span>⚡</span><h3>30 second Summary</h3></div>
         <p class="big">In AWS, a <b>user</b> is a person or a program that can do things in the cloud, just like you right now.</p>
@@ -176,7 +183,7 @@
 
       <!-- ===== 1 EC2 ===== -->
       <section class="module" id="m1" data-title="Launch EC2 instances">
-        <span class="tag">Module 1 · Build the thing to protect</span>
+        <span class="tag">World 1-1 · Build</span>
         <h2>Launch two EC2 instances</h2>
         <div class="scenario">Jugaad Corp has a <b>lab</b> server where experiments happen and a <b>prod</b> server that customers use. Everything we do next exists to protect these two.</div>
         <div class="goal"><b>By the end of this module you'll have:</b><ul><li><span class="inl">jugaad-lab-server</span> tagged <span class="inl">Env=lab</span></li><li><span class="inl">jugaad-prod-server</span> tagged <span class="inl">Env=prod</span></li><li>Proof, as admin, that you can control both (our baseline)</li></ul></div>
@@ -242,7 +249,7 @@
 
       <!-- ===== 2 ALIAS + INTERN ===== -->
       <section class="module" id="m2" data-title="Create a user & see DENY">
-        <span class="tag">Module 2 · Users</span>
+        <span class="tag">World 1-2 · Users</span>
         <h2>Create a user and meet "implicit deny"</h2>
         <div class="scenario">Intern Ishaan starts Monday. You create his account first, and before giving him anything, you check what a brand-new user can do.</div>
         <div class="goal"><b>By the end of this module you'll have:</b><ul><li>A friendly sign-in URL (account alias)</li><li>User <span class="inl">jugaad-intern</span></li><li>Seen, from his login, that a new user can do <b>nothing</b></li></ul></div>
@@ -287,7 +294,7 @@
 
       <!-- ===== 3 POLICY + GROUP ===== -->
       <section class="module" id="m3" data-title="Policy + group = access">
-        <span class="tag">Module 3 · Policies &amp; groups</span>
+        <span class="tag">World 1-3 · Policies</span>
         <h2>Write a policy, attach it, watch ALLOW and DENY appear</h2>
         <div class="scenario">Time to turn your manager's sentence into JSON: "restart lab, never touch prod". Then test it on Ishaan, live.</div>
         <div class="goal"><b>By the end of this module you'll have:</b><ul><li>Policy <span class="inl">JugaadLabOperator</span></li><li>Group <span class="inl">jugaad-operators</span> containing the intern</li><li>Proof the intern can stop lab but not prod</li></ul></div>
@@ -376,7 +383,7 @@
 
       <!-- ===== 4 VIEWER ===== -->
       <section class="module" id="m4" data-title="Read-only viewer">
-        <span class="tag">Module 4 · Managed policies</span>
+        <span class="tag">World 1-4 · Viewer</span>
         <h2>Give a second user read-only access</h2>
         <div class="scenario">Viewer Vidya in finance only needs to <i>look</i> at the servers. No need to write a policy: AWS already has a ready-made one.</div>
         <div class="goal"><b>By the end of this module you'll have:</b><ul><li>Group <span class="inl">jugaad-viewers</span> using an AWS managed policy</li><li>User <span class="inl">jugaad-viewer</span></li><li>Proof that viewing works but even the lab server can't be stopped</li></ul></div>
@@ -394,7 +401,7 @@
 
       <!-- ===== 5 MFA ===== -->
       <section class="module" id="m5" data-title="Secure the intern with MFA">
-        <span class="tag">Module 5 · MFA</span>
+        <span class="tag">World 2-1 · MFA</span>
         <h2>Lock the intern's login with MFA (use your phone)</h2>
         <div class="scenario">Ishaan reuses passwords everywhere. If his password leaks, someone could stop your lab server. Let's make a stolen password useless by tying his login to a phone.</div>
         <div class="goal"><b>By the end of this module you'll have:</b><ul><li>An MFA device on <span class="inl">jugaad-intern</span> using an authenticator app on <b>your phone</b></li><li>Logged in with password <i>and</i> the 6-digit code</li><li>Seen a wrong code get rejected</li></ul></div>
@@ -427,7 +434,7 @@
 
       <!-- ===== 6 ROLE ===== -->
       <section class="module" id="m6" data-title="Roles: temporary access">
-        <span class="tag">Module 6 · Roles</span>
+        <span class="tag">World 2-2 · Roles</span>
         <h2>Roles: borrow powers for an hour</h2>
         <div class="scenario">Prod is on fire at 2 a.m. and Ishaan is the only one online. You don't want to give him permanent prod access, so you create a role he can <b>switch into</b> for a short time.</div>
         <div class="goal"><b>By the end of this module you'll have:</b><ul><li>Policy + role <span class="inl">JugaadProdOperator</span></li><li>A permission letting the operators group assume that role</li><li>Proof: the intern stops prod while wearing the role, and is denied again after switching back</li></ul></div>
@@ -492,7 +499,7 @@
 
       <!-- ===== 7 SCOREBOARD ===== -->
       <section class="module" id="m7" data-title="Scoreboard & secret mission">
-        <span class="tag">Module 7 · Bonus</span>
+        <span class="tag">World 2-3 · Bonus</span>
         <h2>🕵️ Scoreboard &amp; secret mission</h2>
         <p class="why">You've already tested everything live. Here's the recap, plus the pro way to check permissions without logging in as anyone.</p>
         <div class="tablewrap"><table class="ad">
@@ -539,7 +546,7 @@ aws iam simulate-principal-policy \
 
       <!-- ===== 8 CLEANUP ===== -->
       <section class="module" id="m8" data-title="Delete your resources">
-        <span class="tag">Module 8</span>
+        <span class="tag">World 2-4 · Castle</span>
         <h2>Delete your resources</h2>
         <div class="callout warn"><b class="t">Don't skip</b><p>Running instances keep billing after the workshop ends. Do this now, as admin.</p></div>
         <div class="task"><input type="checkbox" id="t8a" data-task><label for="t8a">EC2 → select both servers → Instance state → <b>Terminate</b> → wait for "Terminated"</label>
@@ -554,7 +561,7 @@ aws iam simulate-principal-policy \
 
       <!-- ===== 9 QUIZ ===== -->
       <section class="module" id="m9" data-title="Quick quiz">
-        <span class="tag">Module 9</span>
+        <span class="tag">Boss fight 👾</span>
         <h2>Quick check</h2>
         <div id="quiz"></div>
       </section>
@@ -562,7 +569,7 @@ aws iam simulate-principal-policy \
       <!-- ===== 10 DOCS / CERT ===== -->
       <section class="module" id="m10" data-title="Documentation & certificate">
         <div class="finish">
-          <span class="tag" style="color:#ffb089">You made it</span>
+          <span class="tag">Goal flag 🚩</span>
           <h2>Your documentation &amp; certificate</h2>
           <p><b>What you just did, hands-on:</b> launched and tagged EC2 servers, met implicit deny, wrote a JSON policy and watched ALLOW/DENY change live, used groups and an AWS managed policy, secured a login with a phone MFA code, and borrowed temporary access with a role.</p>
           <p class="mini" style="color:#ffd9c7">Pro tip: Ctrl+F / Cmd+F for <b>"Feeling stuck"</b> to revisit tricky spots.</p>
@@ -579,13 +586,13 @@ aws iam simulate-principal-policy \
     </main>
   </div>
   <footer>
-    © TheJugaadSRE · Built for AWS Student Builder Group NMIET · Educational use only. AWS is a trademark of Amazon.<br>
+    🎮 TheJugaad World, created by Shobhit Verma · © TheJugaadSRE · Built for AWS Student Builder Group NMIET · Educational use only. AWS is a trademark of Amazon.<br>
     Data deletion / opt-out: reply "STOP" to any message or email <span id="contactMail">the organiser</span>.
     <div id="footLinks" style="margin-top:.5rem"></div>
   </footer>
 </div>
 
-<script src="config.js?v=18"></script>
-<script src="app.js?v=18"></script>
+<script src="config.js?v=24"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>
