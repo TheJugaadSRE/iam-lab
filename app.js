@@ -21,7 +21,13 @@
   function showApp() {
     $("#gate").style.display = "none";
     $("#app").style.display = "block";
-    $("#hello").textContent = state.user.name.split(" ")[0];
+    const first = state.user.name.split(" ")[0];
+    $("#hello").textContent = first;
+    $("#uname").textContent = "Hi, " + first;
+    $("#uav").textContent = first[0].toUpperCase();
+    $("#mname").textContent = state.user.name;
+    $("#mmail").textContent = state.user.email;
+    $("#mcollege").textContent = state.user.college;
     window.scrollTo(0, 0);
     init();
   }
@@ -55,6 +61,7 @@
     const { p } = pct();
     $("#pfill").style.width = p + "%";
     $("#ptext").textContent = p + "%";
+    $("#mprog").textContent = p + "%";
     $$(".module").forEach(m => {
       const t = $$("[data-task]", m);
       const link = $(`nav.side a[href="#${m.id}"]`);
@@ -190,6 +197,17 @@
   const signOut = () => { localStorage.removeItem(KEY); location.replace(location.pathname); };
   if (location.search.includes("reset")) signOut();
   $("#signout").addEventListener("click", e => { e.preventDefault(); signOut(); });
+
+  // user dropdown
+  const menu = $("#menu"), ubtn = $("#userBtn");
+  const setMenu = open => { menu.hidden = !open; ubtn.setAttribute("aria-expanded", open); };
+  ubtn.addEventListener("click", e => { e.stopPropagation(); setMenu(menu.hidden); });
+  menu.addEventListener("click", e => { if (e.target.closest("a.mi:not(.out)")) setMenu(false); });
+  document.addEventListener("click", e => { if (!e.target.closest("#userMenu")) setMenu(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+
+  // gate: Login button jumps to the form
+  $("#loginBtn").addEventListener("click", () => { $("#leadForm").scrollIntoView({ behavior: "smooth", block: "center" }); $("#email").focus(); });
 
   if (state.user) showApp();
 })();

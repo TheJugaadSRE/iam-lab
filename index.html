@@ -9,12 +9,13 @@
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
 <!-- ============ SIGN-UP GATE ============ -->
 <section id="gate">
+  <button type="button" class="pill-btn" id="loginBtn">Login</button>
   <div class="hero">
     <div class="brand"><span class="chip"></span>TheJugaad<b>SRE</b></div>
     <p class="eyebrow" style="margin-top:2rem">Hands-on lab · AWS Student Builder Group NMIET</p>
@@ -49,6 +50,7 @@
       <span>I agree to share my details with TheJugaadSRE and be contacted by email / WhatsApp. I can opt out anytime.</span></label>
     <p class="err" id="formErr"></p>
     <button class="btn full" type="submit">Start the lab →</button>
+    <p class="mini" style="text-align:center;margin:.8rem 0 0">Already registered? Use the same details to continue.</p>
   </form>
 </section>
 
@@ -60,7 +62,16 @@
     <div class="brand"><span class="chip"></span>TheJugaad<b>SRE</b></div>
     <div class="grow"></div>
     <div class="pbar"><i id="pfill"></i></div><div class="pct" id="ptext">0%</div>
-    <a href="#" id="signout" title="Switch user">Sign out</a>
+    <div class="user" id="userMenu">
+      <button type="button" id="userBtn" aria-haspopup="true" aria-expanded="false"><span class="av" id="uav">S</span><span id="uname">Hi</span><span class="car">▾</span></button>
+      <div class="menu" id="menu" hidden>
+        <div class="mh"><b id="mname"></b><small id="mmail"></small><small id="mcollege"></small></div>
+        <div class="mp"><span>Progress</span><b id="mprog">0%</b></div>
+        <a href="#m10" class="mi">🎓 My certificate</a>
+        <a href="#m0" class="mi">🏠 Start of lab</a>
+        <a href="#" class="mi out" id="signout">↩ Sign out</a>
+      </div>
+    </div>
   </header>
 
   <div class="layout">
@@ -455,7 +466,7 @@ aws iam simulate-principal-policy \
   </footer>
 </div>
 
-<script src="config.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="config.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
