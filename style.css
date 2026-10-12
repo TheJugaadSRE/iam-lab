@@ -216,3 +216,5 @@ label.f{display:block;font-size:.8rem;font-weight:600;margin:.9rem 0 .25rem}
 .tabs{display:flex;gap:.3rem;background:#efe8df;border-radius:99px;padding:.25rem;margin-bottom:1.3rem}
 .tabs button{flex:1;border:0;background:transparent;border-radius:99px;padding:.5rem;font:600 .85rem var(--sans);cursor:pointer;color:var(--muted)}
 .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+.code code,.task .code code{background:none;padding:0;border-radius:0;font-size:inherit;color:inherit}
