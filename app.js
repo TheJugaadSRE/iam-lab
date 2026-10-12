@@ -24,6 +24,7 @@
   const payload = () => ({ ...state.user, consent: "yes", source: location.hostname });
 
   // ---------- game: points, ranks, toast ----------
+  const CERT_AT = 0.75; // share of tasks needed to unlock the certificate
   const RANKS = [[0, "Cloud Rookie"], [0.2, "IAM Apprentice"], [0.45, "Policy Padawan"], [0.7, "Access Architect"], [0.95, "Jugaad SRE Legend"]];
   function score() {
     const ids = $$("[data-task]").map(t => t.id);
@@ -172,11 +173,13 @@
       const link = $(`nav.side a[href="#${m.id}"]`);
       if (link && t.length) link.classList.toggle("done", t.every(c => c.checked));
     });
-    const ready = p === 100;
+    const { done, total } = pct();
+    const need = Math.ceil(total * CERT_AT);
+    const ready = done >= need;
     $("#certBtn").disabled = !ready;
     $("#finMsg").textContent = ready
-      ? "All tasks done. You just ran a real least-privilege setup. Grab your certificate!"
-      : `Complete every task above to unlock your certificate (${pct().done}/${pct().total} done).`;
+      ? (p === 100 ? "All tasks done. You just ran a real least-privilege setup. Grab your certificate!" : "Certificate unlocked! You can generate it now, or keep going to boost your score.")
+      : `Complete at least ${Math.round(CERT_AT * 100)}% of the tasks to unlock your certificate (${done}/${total} done, ${need - done} to go).`;
   }
 
   let inited = false;
