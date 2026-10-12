@@ -30,8 +30,10 @@
     e.preventDefault();
     const v = id => $("#" + id).value.trim();
     const err = m => ($("#formErr").textContent = m);
-    if (!v("name") || !v("email") || !v("year") || !v("college")) return err("Please fill all required fields.");
+    if (!v("name") || !v("email") || !v("whatsapp") || !v("year") || !v("college") || !v("linkedin")) return err("Please fill all required fields.");
     if (!/^\S+@\S+\.\S+$/.test(v("email"))) return err("Enter a valid email.");
+    if (!/^\+?[\d\s-]{10,15}$/.test(v("whatsapp"))) return err("Enter a valid WhatsApp number.");
+    if (!/linkedin\.com/i.test(v("linkedin"))) return err("Enter your LinkedIn profile URL.");
     if (!$("#consent").checked) return err("Please tick the consent box to continue.");
     state.user = {
       name: v("name"), email: v("email"), whatsapp: v("whatsapp"),

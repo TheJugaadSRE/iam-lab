@@ -12,15 +12,15 @@ Sign-ups (and a "completed" row when someone finishes 100%) land in the Sheet.
 
 ## 2. Publish on GitHub Pages
 ```bash
-cd thejugaadsre-iam-lab
+cd iam-lab
 git init -b main
 git add .
 git commit -m "TheJugaadSRE IAM lab"
-git remote add origin https://github.com/<you>/thejugaadsre-iam-lab.git
+git remote add origin https://github.com/TheJugaadSRE/iam-lab.git
 git push -u origin main
 ```
 Then repo → Settings → Pages → Source: **Deploy from branch**, `main` / `/ (root)`.
-URL: `https://<you>.github.io/thejugaadsre-iam-lab/` (make a QR code of it for the auditorium).
+URL: `https://TheJugaadSRE.github.io/iam-lab/` (make a QR code of it for the auditorium).
 
 ## Notes
 - The gate is a lead-capture form, not security: the page source is public. That's fine for a free lab.

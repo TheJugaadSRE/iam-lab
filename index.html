@@ -37,16 +37,16 @@
     <label class="f" for="email">Email *</label>
     <input type="email" id="email" name="email" autocomplete="email" required>
     <div class="row2">
-      <div><label class="f" for="whatsapp">WhatsApp (optional)</label><input type="tel" id="whatsapp" name="whatsapp" autocomplete="tel"></div>
+      <div><label class="f" for="whatsapp">WhatsApp number *</label><input type="tel" id="whatsapp" name="whatsapp" autocomplete="tel" required></div>
       <div><label class="f" for="year">Year *</label>
         <select id="year" name="year" required><option value="">Select</option><option>1st</option><option>2nd</option><option>3rd</option><option>4th</option><option>Graduate / Working</option></select></div>
     </div>
     <label class="f" for="college">College / Company *</label>
     <input type="text" id="college" name="college" autocomplete="organization" required>
-    <label class="f" for="linkedin">LinkedIn URL (optional)</label>
-    <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/...">
+    <label class="f" for="linkedin">LinkedIn URL *</label>
+    <input type="url" id="linkedin" name="linkedin" required placeholder="https://linkedin.com/in/...">
     <label class="consent"><input type="checkbox" id="consent">
-      <span>I agree that TheJugaadSRE (Shobhit Verma) may store these details and contact me by email / WhatsApp about future sessions, courses, products and offers. I can ask for deletion or opt out at any time by replying "STOP" or emailing the address in the footer.</span></label>
+      <span>I agree to share my details with TheJugaadSRE and be contacted by email / WhatsApp. I can opt out anytime.</span></label>
     <p class="err" id="formErr"></p>
     <button class="btn full" type="submit">Start the lab →</button>
   </form>
