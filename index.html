@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cloud Security with AWS IAM – Hands-on Lab | TheJugaadSRE</title>
+<meta name="description" content="Interactive hands-on lab: launch EC2, build IAM users, groups & policies, and test real ALLOW vs DENY scenarios. By TheJugaadSRE.">
+<meta property="og:title" content="Cloud Security with AWS IAM – Hands-on Lab | TheJugaadSRE">
+<meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ SIGN-UP GATE ============ -->
+<section id="gate">
+  <div class="hero">
+    <div class="brand"><span class="chip"></span>TheJugaad<b>SRE</b></div>
+    <p class="eyebrow" style="margin-top:2rem">Hands-on lab · AWS Student Builder Group NMIET</p>
+    <h1>Cloud Security<br>with <em>AWS IAM</em></h1>
+    <p class="lead">Don't just read about permissions. Launch an instance, create users, write a policy, then watch AWS say <b>ALLOW</b> and <b>DENY</b> in real time.</p>
+    <ul>
+      <li><span>01</span> Launch an EC2 instance</li>
+      <li><span>02</span> Create IAM Users &amp; Groups</li>
+      <li><span>03</span> Write &amp; attach Policies</li>
+      <li><span>04</span> Test ALLOW vs DENY</li>
+    </ul>
+    <div class="speaker"><div class="avatar">SV</div><div><b style="color:var(--ink)">Shobhit Verma</b><br>SRE &amp; Platform Engineering · Creator @TheJugaadSRE</div></div>
+  </div>
+
+  <form class="formcard" id="leadForm" novalidate>
+    <h2>Unlock the lab</h2>
+    <small>Free. Takes 20 seconds. Your progress is saved on this device.</small>
+    <label class="f" for="name">Full name *</label>
+    <input type="text" id="name" name="name" autocomplete="name" required>
+    <label class="f" for="email">Email *</label>
+    <input type="email" id="email" name="email" autocomplete="email" required>
+    <div class="row2">
+      <div><label class="f" for="whatsapp">WhatsApp (optional)</label><input type="tel" id="whatsapp" name="whatsapp" autocomplete="tel"></div>
+      <div><label class="f" for="year">Year *</label>
+        <select id="year" name="year" required><option value="">Select</option><option>1st</option><option>2nd</option><option>3rd</option><option>4th</option><option>Graduate / Working</option></select></div>
+    </div>
+    <label class="f" for="college">College / Company *</label>
+    <input type="text" id="college" name="college" autocomplete="organization" required>
+    <label class="f" for="linkedin">LinkedIn URL (optional)</label>
+    <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/...">
+    <label class="consent"><input type="checkbox" id="consent">
+      <span>I agree that TheJugaadSRE (Shobhit Verma) may store these details and contact me by email / WhatsApp about future sessions, courses, products and offers. I can ask for deletion or opt out at any time by replying "STOP" or emailing the address in the footer.</span></label>
+    <p class="err" id="formErr"></p>
+    <button class="btn full" type="submit">Start the lab →</button>
+  </form>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="scrim"></div>
+<div id="app">
+  <header class="top">
+    <button id="menuBtn" aria-label="Contents">☰ Contents</button>
+    <div class="brand"><span class="chip"></span>TheJugaad<b>SRE</b></div>
+    <div class="grow"></div>
+    <div class="pbar"><i id="pfill"></i></div><div class="pct" id="ptext">0%</div>
+  </header>
+
+  <div class="layout">
+    <nav class="side" id="side"><h4>Lab modules</h4></nav>
+
+    <main id="main">
+
+      <!-- ===== 0 INTRO ===== -->
+      <section class="module" id="m0" data-title="Introduction">
+        <span class="tag">Cloud Beginner Challenge</span>
+        <h2>Cloud Security with AWS IAM</h2>
+        <p class="sub">Let's use IAM to control access to our AWS resources.</p>
+        <p class="mini">Welcome, <b id="hello">builder</b> 👋 · by Shobhit Verma · TheJugaadSRE</p>
+
+        <div class="metagrid">
+          <div><i>&gt;_</i><span><b>Difficulty</b> Easy</span></div>
+          <div><i>⏳</i><span><b>Time</b> ~75 min</span></div>
+          <div><i>$</i><span><b>Cost</b> Free tier</span></div>
+          <div><i>☁</i><span><b>Region</b> ap-south-1</span></div>
+        </div>
+
+        <div class="sumhead"><span>⚡</span><h3>30 second Summary</h3></div>
+        <p class="big">In AWS, a <b>user</b> is a person or a program that can do things in the cloud, just like you right now.</p>
+        <p class="big">Today we'll use <span class="term">AWS Identity and Access Management (IAM)</span> to control who is signed in and what they're allowed to do.</p>
+        <p class="big">We'll launch two <span class="term">EC2 instances</span> (lab and prod), then give an intern access to <i>only</i> the lab one by writing <span class="term">IAM policies</span>, and finish by trying to break our own setup.</p>
+
+        <div class="figure"><svg viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" role="img" aria-label="IAM user group attached to a policy that allows the lab instance and denies the prod instance">
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#2a2623" stroke-width="1.6"/></marker>
+  <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#2f8f55" stroke-width="1.8"/></marker>
+  <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#c8372d" stroke-width="1.8"/></marker></defs>
+  <!-- group -->
+  <rect x="30" y="110" width="230" height="230" rx="22" fill="#fdf1ef" stroke="#c8372d" stroke-width="3"/>
+  <rect x="50" y="128" width="190" height="34" rx="6" fill="#fff" stroke="#e5c8c4"/><text x="145" y="151" text-anchor="middle" font-size="15" font-weight="700" fill="#2a2623">IAM USER GROUP</text>
+  <circle cx="145" cy="215" r="22" fill="none" stroke="#2a2623" stroke-width="3"/><path d="M104 286c0-26 18-40 41-40s41 14 41 40z" fill="none" stroke="#2a2623" stroke-width="3"/>
+  <text x="145" y="318" text-anchor="middle" font-size="18" font-weight="700" fill="#2a2623">Intern Ishaan</text>
+  <circle cx="30" cy="112" r="20" fill="#2a2623"/><text x="30" y="119" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">3</text>
+  <!-- policy -->
+  <line x1="262" y1="225" x2="372" y2="225" stroke="#2a2623" stroke-width="3" marker-end="url(#ah)"/>
+  <rect x="385" y="180" width="76" height="98" rx="12" fill="#fff" stroke="#2a2623" stroke-width="3"/><rect x="408" y="170" width="30" height="18" rx="6" fill="#fff" stroke="#2a2623" stroke-width="3"/>
+  <line x1="400" y1="215" x2="446" y2="215" stroke="#d4cabf" stroke-width="3"/><line x1="400" y1="235" x2="446" y2="235" stroke="#d4cabf" stroke-width="3"/><line x1="400" y1="255" x2="430" y2="255" stroke="#d4cabf" stroke-width="3"/>
+  <text x="423" y="316" text-anchor="middle" font-size="18" font-weight="700" fill="#2a2623">Policy</text>
+  <text x="423" y="338" text-anchor="middle" font-size="12" fill="#7a716a">Start/Stop if Env=lab</text>
+  <circle cx="423" cy="150" r="20" fill="#2a2623"/><text x="423" y="157" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">2</text>
+  <!-- arrows -->
+  <path d="M472 215 C560 215 540 130 620 130" fill="none" stroke="#2f8f55" stroke-width="3.5" marker-end="url(#ag)"/>
+  <path d="M472 245 C560 245 540 330 620 330" fill="none" stroke="#c8372d" stroke-width="3.5" stroke-dasharray="9 7" marker-end="url(#ar)"/>
+  <text x="548" y="165" font-size="14" font-weight="800" fill="#2f8f55">ALLOW</text><text x="548" y="312" font-size="14" font-weight="800" fill="#c8372d">DENY</text>
+  <!-- ec2 -->
+  <rect x="630" y="30" width="245" height="380" rx="22" fill="#fffaf0" stroke="#d9992b" stroke-width="3"/>
+  <rect x="650" y="46" width="160" height="32" rx="6" fill="#fff" stroke="#ecd9b0"/><text x="730" y="68" text-anchor="middle" font-size="15" font-weight="700" fill="#2a2623">EC2 INSTANCES</text>
+  <circle cx="630" cy="32" r="20" fill="#2a2623"/><text x="630" y="39" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">1</text>
+  <g><rect x="705" y="100" width="95" height="95" rx="6" fill="#ec7211"/><rect x="727" y="122" width="50" height="50" rx="4" fill="none" stroke="#fff" stroke-width="4"/><path d="M740 112v10M752 112v10M764 112v10M740 172v10M752 172v10M764 172v10M717 135h10M717 147h10M717 159h10M777 135h10M777 147h10M777 159h10" stroke="#fff" stroke-width="4"/></g>
+  <text x="752" y="222" text-anchor="middle" font-size="18" font-weight="700" fill="#2a2623">Lab server</text><text x="752" y="242" text-anchor="middle" font-size="12" fill="#7a716a">Env = lab</text>
+  <g><rect x="705" y="272" width="95" height="95" rx="6" fill="#ec7211"/><rect x="727" y="294" width="50" height="50" rx="4" fill="none" stroke="#fff" stroke-width="4"/><path d="M740 284v10M752 284v10M764 284v10M740 344v10M752 344v10M764 344v10M717 307h10M717 319h10M717 331h10M777 307h10M777 319h10M777 331h10" stroke="#fff" stroke-width="4"/></g>
+  <text x="752" y="392" text-anchor="middle" font-size="18" font-weight="700" fill="#2a2623">Prod server</text>
+</svg></div>
+        <p class="cap">Today's game plan.</p>
+
+        <p><b>Get ready to create (and learn from scratch):</b></p>
+        <ul class="skills">
+          <li>💻 EC2 instances</li><li>📐 IAM policies</li><li>🏷 Resource tags</li><li>🪪 AWS account alias</li><li>👥 IAM users and user groups</li><li>🕵️ Policy Simulator</li>
+        </ul>
+
+        <div class="scenario"><b>The story.</b> You've just joined <b>Jugaad Corp</b> as the first SRE. An intern, <b>Ishaan</b>, starts Monday. Your manager says: "He needs to restart the lab server. He must never touch production." Your job: make that sentence true in AWS.</div>
+
+        <div class="concept"><h4>What is IAM?</h4>
+          <p><b>IAM</b> = <b>I</b>dentity and <b>A</b>ccess <b>M</b>anagement. It's the AWS service that answers two questions on every single request: <b>Who are you?</b> (authentication) and <b>What are you allowed to do?</b> (authorization).</p>
+          <p class="ana">Analogy: an office building. IAM is the reception desk + key-card system. Users are people with ID cards, groups are departments (Finance, Engineering), policies are the rules printed on the card: "Floor 3 only, 9 to 6".</p>
+          <p>IAM is free and global (not tied to a region).</p></div>
+
+        <h3>Setup</h3>
+        <div class="task"><input type="checkbox" id="t0a" data-task><label for="t0a">Sign in to your AWS account as an admin-level IAM user (or root only if you have nothing else)</label>
+          <div class="detail"><p>No account? Create one at <a href="https://aws.amazon.com/free" target="_blank" rel="noopener">aws.amazon.com/free</a>. Set a billing alert: Billing → Budgets → Create budget → "Zero spend budget".</p>
+          <details class="hint"><summary>Root vs IAM user: which to use?</summary><p>Root = the email you signed up with. It can do <i>everything</i>, including close the account. Use it only for rare account-level tasks. Everything else: an IAM/Identity Center admin user with MFA. Today it's OK to use root if you don't have one yet, and we'll improve that in the hardening module.</p></details></div></div>
+        <div class="task"><input type="checkbox" id="t0b" data-task><label for="t0b">Set the region (top-right) to <b>Asia Pacific (Mumbai) ap-south-1</b></label>
+          <div class="detail"><div class="concept"><h4>What is a Region?</h4><p>A physical location where AWS runs data centres (Mumbai, Singapore, N. Virginia…). Resources you create (like EC2) live in <b>one region</b>. Pick one near your users for speed; pick the one where your free tier applies. IAM stuff (users, policies) is global, so it works across regions.</p></div></div></div>
+        <div class="task"><input type="checkbox" id="t0c" data-task><label for="t0c">Open a second <b>incognito/private</b> window and leave it blank for later</label>
+          <div class="detail"><p>It lets you stay logged in as admin in one window while testing the intern in the other. (Different browser profile works too.)</p></div></div>
+        <div class="callout jugaad"><b class="t">Jugaad mindset</b><p>Jugaad = a clever fix with what you've got. In SRE that means <i>the smallest permission that works</i>. Never hand out <span class="inl">AdministratorAccess</span> "just to make it work".</p></div>
+      </section>
+
+      <!-- ===== 1 EC2 ===== -->
+      <section class="module" id="m1" data-title="Launch EC2 instances">
+        <span class="tag">Module 1</span>
+        <h2>Launch two EC2 instances</h2>
+        <div class="scenario">Jugaad Corp has a <b>lab</b> server where experiments happen and a <b>prod</b> server that customers use. You're launching both so you have something to protect.</div>
+        <div class="goal"><b>In this module you'll:</b><ul><li>Launch an instance called <span class="inl">jugaad-lab-server</span> tagged <span class="inl">Env=lab</span></li><li>Launch an instance called <span class="inl">jugaad-prod-server</span> tagged <span class="inl">Env=prod</span></li></ul></div>
+
+        <div class="concept"><h4>What is EC2?</h4>
+          <p><b>EC2</b> = <b>E</b>lastic <b>C</b>ompute <b>C</b>loud (two C's, hence EC2). It rents you virtual computers ("instances") by the second. You choose the OS, CPU, memory, and AWS runs it in a data centre.</p>
+          <p class="ana">Analogy: renting a laptop from a giant warehouse. Switch it on, use it, switch it off, pay only while it's on.</p></div>
+
+        <h3>Launch instance #1 (lab)</h3>
+        <div class="task"><input type="checkbox" id="t1a" data-task><label for="t1a">Search <b>EC2</b> in the top bar → <b>Instances</b> → <b>Launch instances</b></label></div>
+        <div class="task"><input type="checkbox" id="t1b" data-task><label for="t1b">Name: <span class="inl">jugaad-lab-server</span></label>
+          <div class="detail"><p>Click <b>Add additional tags</b> → Key <span class="inl">Env</span>, Value <span class="inl">lab</span>, Resource type <b>Instances</b>.</p>
+          <div class="concept"><h4>Why are we adding a tag?</h4><p>A <b>tag</b> is a label (key + value) on an AWS resource. Our IAM policy will say "allow stop/start only if <span class="inl">Env</span> is <span class="inl">lab</span>". Without the tag, the policy has nothing to match. Tag keys and values are <b>case-sensitive</b>: <span class="inl">env</span> ≠ <span class="inl">Env</span>.</p></div></div></div>
+        <div class="task"><input type="checkbox" id="t1c" data-task><label for="t1c">AMI: <b>Amazon Linux 2023</b></label>
+          <div class="detail"><div class="concept"><h4>What is an AMI?</h4><p><b>Amazon Machine Image</b>: the template of the operating system (+ pre-installed software) your instance starts from.</p></div>
+          <div class="options"><h4>Options &amp; what to choose</h4><table>
+            <tr><th>Option</th><th>When to use</th></tr>
+            <tr class="pick"><td>Amazon Linux 2023</td><td>Default for AWS work: free-tier eligible, tuned for AWS, patched by Amazon. Our pick.</td></tr>
+            <tr><td>Ubuntu</td><td>If your team/tutorials use Ubuntu and apt.</td></tr>
+            <tr><td>Windows Server</td><td>.NET / Windows apps. Costs more (licence).</td></tr>
+            <tr><td>macOS</td><td>iOS/macOS build farms. Expensive, 24h minimum.</td></tr></table></div></div></div>
+        <div class="task"><input type="checkbox" id="t1d" data-task><label for="t1d">Instance type: <b>t3.micro</b> (or <b>t2.micro</b> if that is the one marked <i>Free tier eligible</i> in your region)</label>
+          <div class="detail"><div class="concept"><h4>What is an instance type?</h4><p>The hardware size: vCPUs and RAM. Name pattern: family + generation . size, e.g. <b>t3.micro</b> = family <b>t</b> (burstable, cheap), generation <b>3</b>, size <b>micro</b> (2 vCPU, 1 GiB RAM).</p></div>
+          <div class="options"><h4>Options &amp; what to choose</h4><table>
+            <tr><th>Family</th><th>Good for</th></tr>
+            <tr class="pick"><td>t (t3, t2)</td><td>Light/bursty workloads, learning. Our pick.</td></tr>
+            <tr><td>m (general purpose)</td><td>Balanced production apps</td></tr>
+            <tr><td>c (compute)</td><td>CPU-heavy: builds, encoding</td></tr>
+            <tr><td>r (memory)</td><td>Databases, caches</td></tr></table></div>
+          <p class="mini">Newer AWS accounts may use a credits-based free plan instead of "free tier eligible" labels. Either way, micro for a short lab costs cents.</p></div></div>
+        <div class="task"><input type="checkbox" id="t1e" data-task><label for="t1e">Key pair: <b>Proceed without a key pair</b></label>
+          <div class="detail"><div class="concept"><h4>What is a key pair?</h4><p>A public/private key used to SSH into a Linux instance. AWS keeps the public half, you download the private <span class="inl">.pem</span> file once.</p></div>
+          <div class="options"><h4>Options &amp; what to choose</h4><table>
+            <tr><th>Option</th><th>When</th></tr>
+            <tr class="pick"><td>Proceed without a key pair</td><td>Today: we never log in to the machine, we only control it from the console.</td></tr>
+            <tr><td>Create new key pair (RSA / ED25519)</td><td>When you do need SSH. ED25519 is newer and smaller; RSA is the most compatible. Keep the .pem file private.</td></tr>
+            <tr><td>Use existing</td><td>Reuse a key you already created</td></tr></table></div>
+          <p class="mini">In real jobs, prefer SSM Session Manager (no open port, no key files).</p></div></div>
+        <div class="task"><input type="checkbox" id="t1f" data-task><label for="t1f">Network settings: keep defaults, <b>remove SSH access</b> (untick "Allow SSH traffic") if shown</label>
+          <div class="detail"><div class="concept"><h4>What is a security group?</h4><p>A virtual firewall around the instance. Rules say which traffic may reach it (port 22 = SSH, 80 = HTTP, 443 = HTTPS). Everything not allowed is blocked.</p></div>
+          <div class="options"><h4>Options &amp; what to choose</h4><table>
+            <tr><th>Setting</th><th>Pick</th></tr>
+            <tr class="pick"><td>Create security group, no inbound rules</td><td>Safest for today. Nothing can reach the machine.</td></tr>
+            <tr><td>SSH from "Anywhere" (0.0.0.0/0)</td><td>Avoid. The whole internet can try to log in.</td></tr>
+            <tr><td>SSH from "My IP"</td><td>OK if you really need SSH.</td></tr></table></div></div></div>
+        <div class="task"><input type="checkbox" id="t1g" data-task><label for="t1g">Storage: leave default (8 GiB gp3) → <b>Launch instance</b></label>
+          <div class="detail"><p><b>gp3</b> is the current general-purpose SSD volume. Default is fine; bigger disks cost more.</p></div></div>
+        <div class="check">The green "Successfully initiated launch of instance" banner appears. Click the instance ID to open it.</div>
+
+        <h3>Launch instance #2 (prod)</h3>
+        <div class="task"><input type="checkbox" id="t1h" data-task><label for="t1h">Repeat with name <span class="inl">jugaad-prod-server</span> and tag <span class="inl">Env</span> = <span class="inl">prod</span></label>
+          <div class="detail"><p>Same AMI, type, no key pair. Only the name and tag value change.</p></div></div>
+        <div class="task"><input type="checkbox" id="t1i" data-task><label for="t1i">Wait until both show <b>Running</b> with <b>2/2 checks passed</b>; note both Instance IDs</label></div>
+        <div class="check">Two instances, tagged differently: <span class="inl">Env=lab</span> and <span class="inl">Env=prod</span>.</div>
+        <details class="stuck"><summary>Feeling stuck? Common problems</summary>
+          <ul><li><b>Can't find "Launch instances":</b> make sure you're in EC2 → Instances, not "Dashboard".</li><li><b>Instance type not available:</b> pick another micro/small the console lists.</li><li><b>Vcpu limit error:</b> new accounts have low limits. Try another region or ask AWS Support to raise it.</li></ul></details>
+      </section>
+
+      <!-- ===== 2 POLICY ===== -->
+      <section class="module" id="m2" data-title="Create an IAM policy">
+        <span class="tag">Module 2</span>
+        <h2>Create an IAM policy</h2>
+        <div class="scenario">Time to turn your manager's sentence into JSON: "restart lab, never touch prod".</div>
+        <div class="goal"><b>In this module you'll:</b><ul><li>Understand what a policy is and how it's structured</li><li>Create a customer-managed policy called <span class="inl">JugaadLabOperator</span></li></ul></div>
+
+        <div class="concept"><h4>What is an IAM policy?</h4>
+          <p>A JSON document that lists permissions. IAM reads it on every request and decides ALLOW or DENY. Policies do nothing on their own; they take effect when <b>attached</b> to a user, group or role.</p></div>
+
+        <div class="options"><h4>Types of policy: what to choose</h4><table>
+          <tr><th>Type</th><th>What it is</th><th>When</th></tr>
+          <tr><td>AWS managed</td><td>Written &amp; updated by AWS (e.g. <span class="inl">AmazonEC2ReadOnlyAccess</span>)</td><td>Quick start; often broader than you need</td></tr>
+          <tr class="pick"><td>Customer managed</td><td>You write it, reusable on many identities, versioned</td><td>Our pick: precise and reusable</td></tr>
+          <tr><td>Inline</td><td>Embedded in one single user/group/role</td><td>Rare one-offs; hard to audit</td></tr></table></div>
+
+        <div class="concept"><h4>Anatomy of a policy</h4>
+          <table class="ad" style="margin-top:.4rem"><tr><th>Element</th><th>Meaning</th></tr>
+            <tr><td><span class="inl">Version</span></td><td>Policy language version. Always <span class="inl">"2012-10-17"</span>.</td></tr>
+            <tr><td><span class="inl">Statement</span></td><td>List of individual rules.</td></tr>
+            <tr><td><span class="inl">Sid</span></td><td>Optional label for the rule (for humans).</td></tr>
+            <tr><td><span class="inl">Effect</span></td><td><span class="inl">Allow</span> or <span class="inl">Deny</span>.</td></tr>
+            <tr><td><span class="inl">Action</span></td><td>What API calls: <span class="inl">ec2:StopInstances</span>. Wildcards allowed: <span class="inl">ec2:Describe*</span>.</td></tr>
+            <tr><td><span class="inl">Resource</span></td><td>On which things, as ARNs (Amazon Resource Names). <span class="inl">*</span> = all.</td></tr>
+            <tr><td><span class="inl">Condition</span></td><td>Extra "only if…" tests: tags, IP, time, MFA…</td></tr></table></div>
+
+        <h3>Create it</h3>
+        <div class="task"><input type="checkbox" id="t2a" data-task><label for="t2a">Search <b>IAM</b> → <b>Policies</b> → <b>Create policy</b></label></div>
+        <div class="task"><input type="checkbox" id="t2b" data-task><label for="t2b">Switch the editor from <b>Visual</b> to <b>JSON</b>, delete the sample, and paste this</label>
+          <div class="detail">
+            <div class="options"><h4>Visual vs JSON editor</h4><table><tr><th>Mode</th><th>Pick when</th></tr>
+              <tr><td>Visual</td><td>Learning, small policies, you want dropdowns</td></tr>
+              <tr class="pick"><td>JSON</td><td>Our pick: faster, copy-pasteable, what you'll see in real repos</td></tr></table></div>
+            <div class="code"><span class="fn">JugaadLabOperator.json</span><button class="copy">Copy</button><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SeeEverything",
+      "Effect": "Allow",
+      "Action": "ec2:Describe*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "StartStopOnlyLabTagged",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:StartInstances",
+        "ec2:StopInstances"
+      ],
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": {
+        "StringEquals": { "aws:ResourceTag/Env": "lab" }
+      }
+    }
+  ]
+}</code></pre></div>
+            <details class="hint"><summary>Read it like a sentence</summary>
+              <p><b>Rule 1:</b> allow listing/viewing EC2 things everywhere. (Describe actions can't be limited per-resource, so <span class="inl">*</span> is required.)<br><b>Rule 2:</b> allow starting and stopping instances, <i>but only if</i> the instance's <span class="inl">Env</span> tag equals <span class="inl">lab</span>.</p>
+              <p>Nothing grants terminate, create or delete, so those stay denied by default.</p></details></div></div>
+        <div class="task"><input type="checkbox" id="t2c" data-task><label for="t2c"><b>Next</b> → Policy name <span class="inl">JugaadLabOperator</span> → <b>Create policy</b></label>
+          <div class="detail"><p>Add a description like "Start/stop Env=lab EC2 only" — future you will thank you.</p></div></div>
+        <div class="check">You see "Policy JugaadLabOperator created" and it appears in the list as <b>Customer managed</b>.</div>
+        <details class="stuck"><summary>Feeling stuck? JSON errors</summary><ul><li>Red marker in the editor = a missing comma/bracket. Re-copy the block with the Copy button.</li><li>Use the <b>Security / Errors / Warnings</b> tabs under the editor, they explain problems in plain English.</li></ul></details>
+      </section>
+
+      <!-- ===== 3 ALIAS ===== -->
+      <section class="module" id="m3" data-title="Create an account alias">
+        <span class="tag">Module 3</span>
+        <h2>Create an AWS account alias</h2>
+        <div class="goal"><b>In this module you'll:</b><ul><li>Swap the ugly 12-digit sign-in URL for a friendly one</li></ul></div>
+        <div class="concept"><h4>What is an account alias?</h4><p>A nickname for your AWS account that becomes part of your users' sign-in URL: <span class="inl">https://&lt;alias&gt;.signin.aws.amazon.com/console</span> instead of <span class="inl">https://123456789012.signin…</span>. Easier to remember, share and trust.</p>
+          <p class="mini">Rules: 3–63 characters, lowercase letters, digits, hyphens; must be unique across all of AWS.</p></div>
+        <div class="task"><input type="checkbox" id="t3a" data-task><label for="t3a">IAM → <b>Dashboard</b> → right side <b>Account Alias</b> → <b>Create</b></label>
+          <div class="detail"><p>Try <span class="inl">jugaad-corp-&lt;your-name&gt;-&lt;random digits&gt;</span>. If it's taken, tweak it.</p></div></div>
+        <div class="task"><input type="checkbox" id="t3b" data-task><label for="t3b">Copy the new <b>Sign-in URL for IAM users</b> into a notepad</label></div>
+        <div class="check">The IAM dashboard shows your alias URL.</div>
+      </section>
+
+      <!-- ===== 4 USERS & GROUPS ===== -->
+      <section class="module" id="m4" data-title="Users & user groups">
+        <span class="tag">Module 4</span>
+        <h2>Create IAM users and user groups</h2>
+        <div class="scenario">Ishaan's laptop arrives Monday. He gets an account that can only run the lab server. A second colleague, <b>Viewer Vidya</b>, only needs to look.</div>
+        <div class="goal"><b>In this module you'll:</b><ul><li>Create group <span class="inl">jugaad-operators</span> with your custom policy</li><li>Create group <span class="inl">jugaad-viewers</span> with a managed read-only policy</li><li>Create users <span class="inl">jugaad-intern</span> and <span class="inl">jugaad-viewer</span></li></ul></div>
+
+        <div class="concept"><h4>Users, groups, roles: what's the difference?</h4>
+          <table class="ad" style="margin-top:.4rem"><tr><th>Identity</th><th>Is…</th><th>Use for</th></tr>
+            <tr><td>User</td><td>A person/app with long-term credentials</td><td>Individual humans (in small setups)</td></tr>
+            <tr><td>Group</td><td>A collection of users sharing permissions</td><td>Teams: "operators", "viewers"</td></tr>
+            <tr><td>Role</td><td>An identity you <i>assume</i> temporarily, no password</td><td>Servers, apps, cross-account, federation (best practice)</td></tr></table>
+          <p class="ana">Rule of thumb: permissions go on <b>groups</b>, people go into groups. When Ishaan changes team you move him, you don't rewrite policies.</p></div>
+
+        <h3>4.1 Create the groups</h3>
+        <div class="task"><input type="checkbox" id="t4a" data-task><label for="t4a">IAM → <b>User groups</b> → <b>Create group</b> → name <span class="inl">jugaad-operators</span> → attach <span class="inl">JugaadLabOperator</span> → Create</label></div>
+        <div class="task"><input type="checkbox" id="t4b" data-task><label for="t4b">Create group <span class="inl">jugaad-viewers</span> → attach AWS managed <span class="inl">AmazonEC2ReadOnlyAccess</span></label></div>
+
+        <h3>4.2 Create the users</h3>
+        <div class="task"><input type="checkbox" id="t4c" data-task><label for="t4c">IAM → <b>Users</b> → <b>Create user</b> → name <span class="inl">jugaad-intern</span></label>
+          <div class="detail"><p>Tick <b>Provide user access to the AWS Management Console</b>.</p>
+          <div class="options"><h4>Options &amp; what to choose</h4><table><tr><th>Choice</th><th>Notes</th></tr>
+            <tr class="pick"><td>"I want to create an IAM user"</td><td>Fine for a lab; simple.</td></tr>
+            <tr><td>"Specify a user in Identity Center"</td><td>AWS-recommended for real companies (SSO, temp credentials). Needs an Organization setup.</td></tr>
+            <tr><td>Custom password</td><td>Type one now (we'll share it in-room). "Autogenerated" is better in real life.</td></tr>
+            <tr><td>"Users must create a new password at next sign-in"</td><td>Best practice in real life. Untick for today to save time.</td></tr></table></div></div></div>
+        <div class="task"><input type="checkbox" id="t4d" data-task><label for="t4d">Set permissions → <b>Add user to group</b> → tick <span class="inl">jugaad-operators</span> → Next → <b>Create user</b></label>
+          <div class="detail"><div class="options"><h4>Options &amp; what to choose</h4><table><tr><th>Option</th><th>Use</th></tr>
+            <tr class="pick"><td>Add user to group</td><td>Always the default choice. Scales to hundreds of users.</td></tr>
+            <tr><td>Copy permissions</td><td>Clone an existing user; carries all their oddities along</td></tr>
+            <tr><td>Attach policies directly</td><td>One-offs only; becomes unmanageable fast</td></tr></table></div></div></div>
+        <div class="task"><input type="checkbox" id="t4e" data-task><label for="t4e">Create a second user <span class="inl">jugaad-viewer</span> in group <span class="inl">jugaad-viewers</span></label></div>
+        <div class="task"><input type="checkbox" id="t4f" data-task><label for="t4f">Save both passwords and the sign-in URL (download .csv or copy)</label>
+          <div class="detail"><p>This is the <b>only time</b> AWS shows the password. Lost? Admin can reset it, but nobody can read it.</p></div></div>
+        <div class="check">Under IAM → User groups, <span class="inl">jugaad-operators</span> shows 1 user and 1 policy; <span class="inl">jugaad-viewers</span> shows 1 user and 1 policy.</div>
+        <div class="callout sre"><b class="t">SRE note</b><p>Real teams: SSO (IAM Identity Center) + roles, short-lived credentials, MFA everywhere. IAM users make the concepts visible today.</p></div>
+      </section>
+
+      <!-- ===== 5 TEST ===== -->
+      <section class="module" id="m5" data-title="Test ALLOW vs DENY">
+        <span class="tag">Module 5 · The fun part</span>
+        <h2>Test your intern's access</h2>
+        <div class="scenario">Monday morning. Ishaan logs in. Does the system behave like your manager promised?</div>
+        <div class="goal"><b>In this module you'll:</b><ul><li>Predict each result before you click</li><li>Log in as each user and verify</li></ul></div>
+
+        <div class="concept"><h4>How AWS decides: ALLOW vs DENY</h4>
+          <div class="flow"><div>Request arrives</div>→<div>Any matching explicit <b>Deny</b>?</div>→<div class="x">Yes → DENY</div><div>No →</div><div>Any matching <b>Allow</b>?</div>→<div class="y">Yes → ALLOW</div><div class="x">No → implicit DENY</div></div>
+          <p><b>Power order:</b> explicit Deny &gt; Allow &gt; implicit Deny (the default for everything not allowed).</p></div>
+
+        <h3>Predict first</h3>
+        <div class="tablewrap"><table class="ad">
+          <tr><th>#</th><th>Sign in as</th><th>Action</th><th>Your guess</th><th>Reality</th></tr>
+          <tr><td>1</td><td>jugaad-intern</td><td>View EC2 → Instances</td><td>?</td><td><span class="pill a">ALLOW</span></td></tr>
+          <tr><td>2</td><td>jugaad-intern</td><td>Stop <b>lab</b> server</td><td>?</td><td><span class="pill a">ALLOW</span></td></tr>
+          <tr><td>3</td><td>jugaad-intern</td><td>Stop <b>prod</b> server</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
+          <tr><td>4</td><td>jugaad-intern</td><td>Terminate lab server</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
+          <tr><td>5</td><td>jugaad-viewer</td><td>View instances</td><td>?</td><td><span class="pill a">ALLOW</span></td></tr>
+          <tr><td>6</td><td>jugaad-viewer</td><td>Stop lab server</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
+          <tr><td>7</td><td>jugaad-intern</td><td>Open S3 or IAM console</td><td>?</td><td><span class="pill d">DENY</span></td></tr>
+        </table></div>
+
+        <h3>Run the tests</h3>
+        <div class="task"><input type="checkbox" id="t5a" data-task><label for="t5a">In the incognito window open your alias sign-in URL and log in as <span class="inl">jugaad-intern</span></label>
+          <div class="detail"><p>Account = your alias (pre-filled), IAM user name, password. Set the region to ap-south-1.</p></div></div>
+        <div class="task"><input type="checkbox" id="t5b" data-task><label for="t5b">Tests 1–3: view instances, stop the lab server, then try to stop the prod server</label>
+          <div class="detail"><p>Lab: <b>Instance state → Stop instance</b> works. Prod: red banner <i>"You are not authorized to perform: ec2:StopInstances … because no identity-based policy allows"</i>.</p>
+          <details class="hint"><summary>Reading the error message</summary><p>It tells you <b>who</b> (the user ARN), <b>what</b> (ec2:StopInstances), <b>on which resource</b>, and <b>why</b> ("no identity-based policy allows" = implicit deny). This message is your best debugging friend.</p></details></div></div>
+        <div class="task"><input type="checkbox" id="t5c" data-task><label for="t5c">Test 4: try <b>Instance state → Terminate</b> on the lab server</label></div>
+        <div class="task"><input type="checkbox" id="t5d" data-task><label for="t5d">Test 7: open the S3 and IAM consoles</label></div>
+        <div class="task"><input type="checkbox" id="t5e" data-task><label for="t5e">Sign out, log in as <span class="inl">jugaad-viewer</span>, run tests 5 and 6</label></div>
+        <div class="task"><input type="checkbox" id="t5f" data-task><label for="t5f"><b>Tag experiment:</b> as admin, change the lab server's tag <span class="inl">Env</span> from <span class="inl">lab</span> to <span class="inl">dev</span>; retry Stop as intern; then change it back</label>
+          <div class="detail"><p>Same user, same policy, different tag → DENY. That's tag-based access control (ABAC) in action.</p></div></div>
+        <div class="check">The intern controls only the lab server. Mission accomplished: "Never touch prod" is now enforced by AWS, not by trust.</div>
+        <details class="stuck"><summary>Feeling stuck? Lab stop is being denied</summary>
+          <ul><li>Tag key/value spelled differently? Must be exactly <span class="inl">Env</span>=<span class="inl">lab</span>.</li><li>Is the intern really in <span class="inl">jugaad-operators</span>? IAM → User groups → Users tab.</li><li>Did you attach <span class="inl">JugaadLabOperator</span> to the group? Check the Permissions tab.</li><li>Wait ~30 seconds after changes; IAM is eventually consistent.</li></ul></details>
+      </section>
+
+      <!-- ===== 6 SECRET MISSION ===== -->
+      <section class="module" id="m6" data-title="Secret mission">
+        <span class="tag">Module 6 · Bonus</span>
+        <h2>🕵️ Secret mission</h2>
+        <div class="mission"><b class="t">Mission briefing</b>
+          <p>Testing by clicking is slow and risky. Professionals <b>simulate</b> permissions. Your mission: prove the intern's access without ever logging in as the intern.</p></div>
+
+        <div class="concept"><h4>What is the IAM Policy Simulator?</h4><p>A tool that evaluates policies against actions you choose, and tells you allowed / denied and <i>which statement</i> decided. No real API calls are made, so nothing gets stopped or deleted.</p></div>
+
+        <div class="task"><input type="checkbox" id="t6a" data-task><label for="t6a">Open <a href="https://policysim.aws.amazon.com" target="_blank" rel="noopener">policysim.aws.amazon.com</a> as admin → Users → <span class="inl">jugaad-intern</span></label>
+          <div class="detail"><p>Select service <b>Amazon EC2</b>, actions <span class="inl">DescribeInstances</span>, <span class="inl">StopInstances</span>, <span class="inl">TerminateInstances</span> → <b>Run simulation</b>.</p>
+          <details class="hint"><summary>Why might StopInstances show "denied" here?</summary><p>The simulator doesn't know your instance's tag unless you tell it. Our policy only allows when <span class="inl">aws:ResourceTag/Env = lab</span>. Add a context key/resource in the simulator settings to mimic it. Missing information = condition not met = deny.</p></details></div></div>
+        <div class="task"><input type="checkbox" id="t6b"><label for="t6b">Bonus: add an <b>explicit Deny</b> and watch it beat the Allow</label>
+          <div class="detail"><p>Create a policy, attach it to <span class="inl">jugaad-operators</span>, retry Stop on the lab server as intern (or simulate it). Then detach it.</p>
+            <div class="code"><span class="fn">JugaadFreezeStops.json</span><button class="copy">Copy</button><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "FreezeStops",
+    "Effect": "Deny",
+    "Action": "ec2:StopInstances",
+    "Resource": "*"
+  }]
+}</code></pre></div></div></div>
+        <div class="task"><input type="checkbox" id="t6c"><label for="t6c">(Optional) CLI version in <b>CloudShell</b></label>
+          <div class="detail"><p>Click the CloudShell icon in the top bar (no install). Replace <span class="inl">&lt;ACCOUNT_ID&gt;</span> (top-right menu).</p>
+            <div class="code"><span class="fn">CloudShell</span><button class="copy">Copy</button><pre><code>aws sts get-caller-identity
+
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::&lt;ACCOUNT_ID&gt;:user/jugaad-intern \
+  --action-names ec2:StopInstances ec2:TerminateInstances \
+  --context-entries "ContextKeyName=aws:ResourceTag/Env,ContextKeyValues=lab,ContextKeyType=string" \
+  --query 'EvaluationResults[].[EvalActionName,EvalDecision]' --output table</code></pre></div></div></div>
+        <div class="docbox"><b>📸 Show it off:</b> screenshot the simulator result and post it with <span class="inl">#TheJugaadSRE</span>.</div>
+      </section>
+
+      <!-- ===== 7 HARDEN ===== -->
+      <section class="module" id="m7" data-title="Harden like an SRE">
+        <span class="tag">Module 7</span>
+        <h2>Harden it like an SRE</h2>
+        <p class="why">Working permissions aren't the finish line. Make them safe.</p>
+        <div class="concept"><h4>What is MFA?</h4><p><b>Multi-Factor Authentication</b>: a password (something you know) plus a code from your phone (something you have). A leaked password alone is no longer enough.</p></div>
+        <div class="options"><h4>MFA options &amp; what to choose</h4><table><tr><th>Type</th><th>Notes</th></tr>
+          <tr class="pick"><td>Authenticator app (TOTP)</td><td>Free, quick. Google/Microsoft Authenticator, Authy.</td></tr>
+          <tr><td>Passkey / security key (FIDO2)</td><td>Strongest, phishing-resistant. Needs a key or compatible device.</td></tr>
+          <tr><td>SMS</td><td>Not offered by AWS for IAM. Don't rely on it anywhere.</td></tr></table></div>
+        <div class="task"><input type="checkbox" id="t7a" data-task><label for="t7a">Enable MFA on your own admin user (Security credentials → Assign MFA device)</label></div>
+        <div class="task"><input type="checkbox" id="t7b" data-task><label for="t7b">Open <b>IAM Access Analyzer</b> and browse the findings page</label></div>
+        <div class="task"><input type="checkbox" id="t7c" data-task><label for="t7c">Write down your own 3 rules</label>
+          <div class="detail"><details class="hint"><summary>Jugaad SRE's 3 rules</summary><p>1. Root = break-glass only, with MFA.<br>2. Permissions go on groups/roles, never straight on people.<br>3. Start from zero; add only what a failing request demands.</p></details></div></div>
+      </section>
+
+      <!-- ===== 8 CLEANUP ===== -->
+      <section class="module" id="m8" data-title="Delete your resources">
+        <span class="tag">Module 8</span>
+        <h2>Delete your resources</h2>
+        <div class="callout warn"><b class="t">Don't skip</b><p>Running instances keep billing after the workshop ends. Do this now.</p></div>
+        <div class="task"><input type="checkbox" id="t8a" data-task><label for="t8a">EC2 → select both servers → Instance state → <b>Terminate</b> → wait for "Terminated"</label>
+          <div class="detail"><div class="options"><h4>Stop vs Terminate</h4><table><tr><th>Action</th><th>Effect</th></tr><tr><td>Stop</td><td>Powered off; disk still billed; can start again</td></tr><tr class="pick"><td>Terminate</td><td>Deleted for good. Pick this for cleanup.</td></tr></table></div></div></div>
+        <div class="task"><input type="checkbox" id="t8b" data-task><label for="t8b">Delete users <span class="inl">jugaad-intern</span> and <span class="inl">jugaad-viewer</span></label></div>
+        <div class="task"><input type="checkbox" id="t8c" data-task><label for="t8c">Delete groups <span class="inl">jugaad-operators</span>, <span class="inl">jugaad-viewers</span></label></div>
+        <div class="task"><input type="checkbox" id="t8d" data-task><label for="t8d">Delete policies <span class="inl">JugaadLabOperator</span> (and <span class="inl">JugaadFreezeStops</span> if you made it)</label></div>
+        <div class="task"><input type="checkbox" id="t8e"><label for="t8e">(Optional) Delete the account alias</label></div>
+        <div class="check">EC2 shows 0 running instances. IAM shows none of your lab users, groups or policies.</div>
+      </section>
+
+      <!-- ===== 9 QUIZ ===== -->
+      <section class="module" id="m9" data-title="Quick quiz">
+        <span class="tag">Module 9</span>
+        <h2>Quick check</h2>
+        <div id="quiz"></div>
+      </section>
+
+      <!-- ===== 10 DOCS / CERT ===== -->
+      <section class="module" id="m10" data-title="Documentation & certificate">
+        <div class="finish">
+          <span class="tag" style="color:#ffb089">You made it</span>
+          <h2>Your documentation &amp; certificate</h2>
+          <p><b>What you just learned:</b> EC2 + tags, IAM policies (Effect/Action/Resource/Condition), account aliases, users/groups/roles, ALLOW vs DENY evaluation, the Policy Simulator, MFA and cleanup.</p>
+          <p class="mini" style="color:#ffd9c7">Pro tip: Ctrl+F / Cmd+F for <b>"Feeling stuck"</b> to revisit tricky spots.</p>
+          <p id="finMsg">Complete every task above to unlock your certificate.</p>
+          <button class="btn" id="certBtn" disabled>🎓 Generate my certificate</button>
+          <div id="certWrap"><canvas id="cert" width="1200" height="850"></canvas>
+            <a class="btn ghost" id="certDl" download="TheJugaadSRE-IAM-Certificate.png">Download PNG</a></div>
+          <hr style="border-color:#ffffff30;margin:1.5rem 0">
+          <p><b>Share it</b> on LinkedIn with <span class="inl" style="background:#ffffff20">#TheJugaadSRE #AWSsbgl #StudentsBuildAWS</span> and tag Shobhit Verma.</p>
+          <p id="socials"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <footer>
+    © TheJugaadSRE · Built for AWS Student Builder Group NMIET · Educational use only. AWS is a trademark of Amazon.<br>
+    Data deletion / opt-out: reply "STOP" to any message or email <span id="contactMail">the organiser</span>.
+    <div id="footLinks" style="margin-top:.5rem"></div>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
