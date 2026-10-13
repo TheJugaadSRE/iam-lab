@@ -413,8 +413,8 @@
     g.fillText("EC2 · IAM Users, Groups & Policies · ALLOW vs DENY", 90, 590);
     g.fillText(`${C.EVENT_DATE || ""} · AWS Student Builder Group NMIET`, 90, 630);
     const sc = score(); g.fillStyle = "#b5390b"; g.font = "700 30px Inter, sans-serif"; g.fillText(`Score: ${sc.total} / ${sc.max} pts · ${sc.rank}`, 90, 690);
-    g.fillStyle = "#6b635d"; g.font = "400 20px Inter, sans-serif"; g.fillText("SRE & Platform Engineering · Creator @TheJugaadSRE", 90, 765);
-    g.fillStyle = "#6b635d"; g.font = "600 18px Inter, sans-serif"; g.fillText("TheJugaad World · AWS IAM Edition · A game by Shobhit Verma", 90, 800);
+    g.fillStyle = "#6b635d"; g.font = "400 20px Inter, sans-serif"; g.fillText("SRE & Platform Engineering, Developer Advocate, Creator @TheJugaadSRE", 90, 765);
+    g.fillStyle = "#6b635d"; g.font = "600 18px Inter, sans-serif"; g.fillText("TheJugaadWorld - AWS IAM Edition - A game by Shobhit Verma", 90, 800);
     $("#certWrap").style.display = "block";
     $("#certDl").href = cv.toDataURL("image/png");
     $("#certWrap").scrollIntoView({ behavior: "smooth", block: "center" });
