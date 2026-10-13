@@ -394,3 +394,11 @@ footer a{color:#ffd166}
 .menu .mh b{color:var(--ink)}
 footer{background-color:#5a3320}
 @media(max-width:560px){header.top .brand{display:none}.pts .lbl{display:none}header.top .grow{flex:1}header.top{gap:.5rem;padding:.55rem .7rem}}
+
+.followbox{border:3px dashed #ffd166;border-radius:6px;padding:1rem 1.1rem;margin:1rem 0 1.2rem;background:#2a221d}
+.followbox p{margin:.3rem 0;color:#fff}
+.followbox .fl{display:flex;gap:.7rem;flex-wrap:wrap;margin:.7rem 0}
+.btn.sm{font-size:.6rem;padding:.65rem .9rem}
+.followbox label.follow{display:flex;gap:.7rem;align-items:flex-start;color:#fff;font-weight:600;cursor:pointer;line-height:1.5}
+.followbox label.follow input{width:22px;height:22px;margin-top:.15rem;accent-color:#ffcf33;flex:none;cursor:pointer}
+.followbox label.follow b{color:#ffd166}

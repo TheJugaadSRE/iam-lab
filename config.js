@@ -14,7 +14,7 @@ window.JUGAAD_CONFIG = {
   // Your links (shown in the footer / end screen)
   LINKS: {
     youtube: "https://www.youtube.com/@TheJugaadSRE",
-    linkedin: "https://www.linkedin.com/in/",
+    linkedin: "https://www.linkedin.com/in/thejugaadsre/",
     instagram: "https://www.instagram.com/thejugaadsre",
     whatsapp: ""
   }

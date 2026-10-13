@@ -102,7 +102,7 @@
   }
   function moduleDone(id) {
     if (id === "m9") return Object.keys(state.quiz).length >= QUIZ.length;
-    if (id === "m10") return certReady();
+    if (id === "m10") return certUnlocked();
     const t = $$("[data-task]", $("#" + id));
     return t.length > 0 && t.every(c => c.checked);
   }
@@ -125,12 +125,13 @@
     });
   }
   const certReady = () => { const { done, total } = pct(); return done >= Math.ceil(total * CERT_AT); };
+  const certUnlocked = () => certReady() && !!state.follow;
   function levelCheck(c) {
     const mod = c.closest(".module"); state.cleared = state.cleared || {};
     const all = $$("[data-task]", mod).every(x => x.checked);
     if (c.checked && all && !state.cleared[mod.id]) { state.cleared[mod.id] = true; save(); celebrate(`🚩 WORLD ${CODE[mod.id] || ""} CLEARED!`); }
     else if (!c.checked && state.cleared[mod.id]) { state.cleared[mod.id] = false; save(); }
-    if (certReady() && !state.certFx) { state.certFx = true; save(); celebrate("🎓 CERTIFICATE UNLOCKED!"); }
+    if (certUnlocked() && !state.certFx) { state.certFx = true; save(); celebrate("🎓 CERTIFICATE UNLOCKED!"); }
   }
 
   function renderScore() {
@@ -208,7 +209,7 @@
       year: v("year"), college: v("college"), linkedin: v("linkedin"), consent: true
     };
     const bk = loadBackup(state.user.email);
-    if (bk) { state.tasks = bk.tasks || {}; state.quiz = bk.quiz || {}; }
+    if (bk) { state.tasks = bk.tasks || {}; state.quiz = bk.quiz || {}; state.follow = !!bk.follow; }
     save();
     // server de-duplicates by email: an existing email just continues, no second row
     await api({ type: "signup", ...payload(), progress: 0, tasks: doneIds() });
@@ -238,6 +239,7 @@
     if (!user) return err(r ? "We couldn't find that email + WhatsApp. Check them, or use Register." : "Couldn't reach the server. Check your internet and try again.");
     state.user = user;
     state.tasks = { ...(bk ? bk.tasks : {}), ...tasks };
+    state.follow = !!(bk && bk.follow);
     state.quiz = { ...(bk ? bk.quiz : {}), ...quiz };
     save();
     showApp();
@@ -264,11 +266,13 @@
     });
     const { done, total } = pct();
     const need = Math.ceil(total * CERT_AT);
-    const ready = done >= need;
-    $("#certBtn").disabled = !ready;
-    $("#finMsg").textContent = ready
-      ? (p === 100 ? "All tasks done. You just ran a real least-privilege setup. Grab your certificate!" : "Certificate unlocked! You can generate it now, or keep going to boost your score.")
-      : `Complete at least ${Math.round(CERT_AT * 100)}% of the tasks to unlock your certificate (${done}/${total} done, ${need - done} to go).`;
+    const ready = done >= need, follows = !!state.follow;
+    $("#certBtn").disabled = !(ready && follows);
+    $("#finMsg").textContent = !ready
+      ? `Complete at least ${Math.round(CERT_AT * 100)}% of the tasks to unlock your certificate (${done}/${total} done, ${need - done} to go).`
+      : !follows
+        ? "Almost there! Follow Shobhit on LinkedIn and Instagram, then tick the box above to unlock your certificate."
+        : (p === 100 ? "All tasks done. You just ran a real least-privilege setup. Grab your certificate!" : "Certificate unlocked! You can generate it now, or keep going to boost your score.");
   }
 
   let inited = false;
@@ -341,6 +345,12 @@
 
     buildQuiz();
     buildLinks();
+    const fc = $("#followChk"); fc.checked = !!state.follow;
+    fc.addEventListener("change", () => {
+      state.follow = fc.checked; save(); refresh();
+      if (certUnlocked() && !state.certFx) { state.certFx = true; save(); celebrate("🎓 CERTIFICATE UNLOCKED!"); }
+      else if (fc.checked) toast("Thanks for following! 🙌");
+    });
     $("#certBtn").addEventListener("click", drawCert);
     refresh();
   }
@@ -375,6 +385,8 @@
     const L = C.LINKS || {};
     const items = [["YouTube", L.youtube], ["LinkedIn", L.linkedin], ["Instagram", L.instagram], ["WhatsApp", L.whatsapp]].filter(x => x[1]);
     const html = items.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join("");
+    if (L.linkedin) $("#fLi").href = L.linkedin;
+    if (L.instagram) $("#fIg").href = L.instagram;
     $("#socials").innerHTML = items.length ? "Follow <b>TheJugaadSRE</b>: " + html : "";
     $("#footLinks").innerHTML = html;
     if (C.CONTACT_EMAIL) $("#contactMail").innerHTML = `<a href="mailto:${C.CONTACT_EMAIL}">${C.CONTACT_EMAIL}</a>`;
@@ -412,7 +424,7 @@
   // sign out / switch user (also via ?reset in the URL)
   const signOut = () => {
     if (state.user) {
-      localStorage.setItem(PKEY(state.user.email), JSON.stringify({ user: state.user, tasks: state.tasks, quiz: state.quiz }));
+      localStorage.setItem(PKEY(state.user.email), JSON.stringify({ user: state.user, tasks: state.tasks, quiz: state.quiz, follow: state.follow }));
       localStorage.setItem(LAST, state.user.email);
     }
     localStorage.removeItem(KEY);

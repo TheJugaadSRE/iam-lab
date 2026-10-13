@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>TheJugaad World · World Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2a2623;--gold:#ffcf33;--orange:#d2400e;--px:'Press Start 2P',monospace}
+*{box-sizing:border-box;margin:0}
+html,body{width:1200px;height:1500px;overflow:hidden}
+body{font-family:Inter,sans-serif;color:var(--ink);position:relative;
+ background:
+ url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='200' shape-rendering='crispEdges'%3E%3Cg fill='white' fill-opacity='.9'%3E%3Cg transform='translate(60,30) scale(12)'%3E%3Crect x='6' y='0' width='6' height='2'/%3E%3Crect x='4' y='2' width='12' height='2'/%3E%3Crect x='14' y='2' width='6' height='2'/%3E%3Crect x='2' y='4' width='20' height='2'/%3E%3Crect x='0' y='6' width='24' height='4'/%3E%3C/g%3E%3Cg transform='translate(820,70) scale(8)'%3E%3Crect x='6' y='0' width='6' height='2'/%3E%3Crect x='4' y='2' width='12' height='2'/%3E%3Crect x='2' y='4' width='20' height='2'/%3E%3Crect x='0' y='6' width='24' height='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") no-repeat 0 0,
+ linear-gradient(#78c6f4 0,#b7e3fb 520px,#e6f5ff 1100px)}
+header{padding:34px 60px 0;text-align:center;position:relative}
+.pre{font:400 18px var(--px);letter-spacing:.06em}
+h1{font:400 56px/1.25 var(--px);margin:14px 0 10px;text-shadow:6px 6px 0 var(--gold)}
+h1 em{font-style:normal;color:#a8320a}
+.sub{display:inline-block;background:#fff;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);font:400 17px/1.6 var(--px);padding:10px 16px}
+.map{display:grid;grid-template-columns:repeat(4,1fr);gap:44px 54px;padding:0 54px;margin-top:38px;position:relative}
+.card{position:relative;background:#fffdf6;border:4px solid var(--ink);box-shadow:7px 7px 0 var(--ink);padding:40px 16px 14px;min-height:232px;text-align:center}
+.badge{position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold);font:400 17px var(--px);padding:10px 14px;box-shadow:4px 4px 0 #ffd166;white-space:nowrap}
+.ico{font-size:42px;line-height:1}
+.nm{font:400 16px/1.45 var(--px);margin:8px 0 8px}
+.tx{font-size:21px;line-height:1.35;font-weight:700;color:#3a322d}
+.tx small{display:block;font-size:19px;font-weight:500;margin-top:6px;color:#4a423c}
+.r1{grid-row:1}.r2{grid-row:2}.r3{grid-row:3}.c1{grid-column:1}.c2{grid-column:2}.c3{grid-column:3}.c4{grid-column:4}
+/* connectors */
+.card.r:after{content:"";position:absolute;top:50%;left:100%;width:54px;border-top:6px dotted var(--ink)}
+.card.l:after{content:"";position:absolute;top:50%;right:100%;width:54px;border-top:6px dotted var(--ink)}
+.card.d:after{content:"";position:absolute;left:50%;top:100%;height:44px;border-left:6px dotted var(--ink)}
+.card.done{background:#fff6d6}
+.start,.goal{background:#fff6d6}
+.mascot{display:block;margin:-4px auto 0}
+.legend{background:var(--ink);color:#fff;border:4px solid #000;box-shadow:7px 7px 0 #7a4b00;padding:22px 18px;text-align:left;min-height:232px}
+.legend h3{font:400 16px/1.5 var(--px);color:var(--gold);margin-bottom:12px}
+.legend p{font-size:20px;line-height:1.35;font-weight:600;margin:6px 0}
+.legend b{color:var(--gold)}
+.tag{margin:30px 54px 0;background:var(--ink);color:#fff;border:4px solid #000;box-shadow:7px 7px 0 #ffd166;padding:16px 24px;text-align:center;font:700 25px/1.4 Inter,sans-serif}.tag b{color:var(--gold)}
+footer{position:absolute;left:0;right:0;bottom:0;height:112px;background:linear-gradient(#3fae49 0 20px,#2d7d37 20px 26px,#5a3320 26px);color:#fff;text-align:center;padding-top:36px}
+footer .l1{font:400 18px/1.6 var(--px)}
+footer .l2{font-size:22px;font-weight:700;margin-top:4px;color:#ffd166}
+</style></head>
+<body>
+<header>
+  <div class="pre">THEJUGAADSRE PRESENTS</div>
+  <h1>THEJUGAAD<br><em>WORLD</em></h1>
+  <div class="sub">AWS IAM EDITION · THE WORLD MAP</div>
+</header>
+
+<div class="map">
+  <div class="card c1 start r r1">
+    <div class="badge">START</div>
+    <svg class="mascot" id="mas" width="72" height="84" viewBox="0 0 36 42" shape-rendering="crispEdges"></svg>
+    <div class="nm">PRESS START</div>
+    <div class="tx">Sign up, Player 1<small>Meet Jugaad Corp and its new intern</small></div>
+  </div>
+  <div class="card c2 r r1"><div class="badge">WORLD 1-1</div><div class="ico">🖥</div><div class="nm">LAUNCH EC2</div>
+    <div class="tx">Two servers<small>lab + prod, tagged Env=lab / Env=prod</small></div></div>
+  <div class="card c3 r r1"><div class="badge">WORLD 1-2</div><div class="ico">👤</div><div class="nm">MEET DENY</div>
+    <div class="tx">Create the intern<small>a new user can do nothing at all</small></div></div>
+  <div class="card c4 d r1"><div class="badge">WORLD 1-3</div><div class="ico">📐</div><div class="nm">WRITE A POLICY</div>
+    <div class="tx">IAM policy in JSON<small>ALLOW on lab, DENY on prod</small></div></div>
+
+  <div class="card c4 l r2"><div class="badge">WORLD 1-4</div><div class="ico">👀</div><div class="nm">READ-ONLY</div>
+    <div class="tx">Groups + managed policy<small>viewer can look, not touch</small></div></div>
+  <div class="card c3 l r2"><div class="badge">WORLD 2-1</div><div class="ico">📱</div><div class="nm">SCAN THE CODE</div>
+    <div class="tx">MFA on your phone<small>log in with a 6-digit code</small></div></div>
+  <div class="card c2 l r2"><div class="badge">WORLD 2-2</div><div class="ico">🎭</div><div class="nm">BORROW POWERS</div>
+    <div class="tx">Switch to a role<small>stop prod, switch back, denied again</small></div></div>
+  <div class="card c1 d r2"><div class="badge">WORLD 2-3</div><div class="ico">🕵️</div><div class="nm">SECRET MISSION</div>
+    <div class="tx">Policy Simulator<small>test access without logging in</small></div></div>
+
+  <div class="card c1 r r3"><div class="badge">WORLD 2-4</div><div class="ico">🏰</div><div class="nm">THE CASTLE</div>
+    <div class="tx">Clean up<small>delete it all, no surprise bills</small></div></div>
+  <div class="card c2 r r3"><div class="badge">BOSS FIGHT</div><div class="ico">👾</div><div class="nm">QUIZ BOSS</div>
+    <div class="tx">6 questions<small>+5 points for each right answer</small></div></div>
+  <div class="card c3 goal r3"><div class="badge">GOAL FLAG</div><div class="ico">🚩</div><div class="nm">CERTIFICATE</div>
+    <div class="tx">Your score + rank<small>unlocks at 75% of tasks</small></div></div>
+  <div class="legend c4 r3">
+    <h3>HOW TO SCORE</h3>
+    <p>🪙 <b>+5</b> per task</p>
+    <p>⭐ <b>56</b> tasks</p>
+    <p>🏆 Max <b>310</b> pts</p>
+    <p>Ranks: Rookie to <b>Legend</b></p>
+  </div>
+</div>
+
+<div class="tag">★ Every world ends with a <b>live proof</b> on a real AWS account.<br>Break it. Fix it. Learn it. ★</div>
+
+<footer>
+  <div class="l1">A GAME BY SHOBHIT VERMA · THEJUGAADSRE</div>
+  <div class="l2">thejugaadsre.github.io/iam-lab</div>
+</footer>
+
+<script>
+const rows=["....oooo....","..oooooooo..","..oooooooo..",".hhhhhhhhhh.","..ssssssss..","..skssssks..","..ssssssss..","...ssswss...","..bbbbbbbb..",".bbbbbbbbbb.",".sbbbbbbbbs.","..bbbbbbbb..","..hh....hh..",".hhh....hhh."];
+const col={o:"#f2561d",h:"#2a2623",s:"#f5c9a0",k:"#000",w:"#fff",b:"#2563eb"};let r="";
+rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(col[ch])r+=`<rect x="${x*3}" y="${y*3}" width="3" height="3" fill="${col[ch]}"/>`}));
+document.getElementById("mas").innerHTML=r;
+</script>
+</body></html>
