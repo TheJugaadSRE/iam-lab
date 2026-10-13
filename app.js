@@ -351,7 +351,15 @@
       if (certUnlocked() && !state.certFx) { state.certFx = true; save(); celebrate("🎓 CERTIFICATE UNLOCKED!"); }
       else if (fc.checked) toast("Thanks for following! 🙌");
     });
-    $("#certBtn").addEventListener("click", drawCert);
+    // editable name on the certificate (before or after generating/downloading)
+    const cn = $("#certName"); cn.value = state.certName || state.user.name;
+    let cnT;
+    cn.addEventListener("input", () => {
+      state.certName = cn.value; save();
+      clearTimeout(cnT);
+      cnT = setTimeout(() => { if (getComputedStyle($("#certWrap")).display !== "none") drawCert(false); }, 250);
+    });
+    $("#certBtn").addEventListener("click", () => drawCert(true));
     refresh();
   }
 
@@ -393,7 +401,7 @@
   }
 
   // ---------- certificate ----------
-  async function drawCert() {
+  async function drawCert(scroll = true) {
     try { await Promise.all([document.fonts.load("700 40px 'Playfair Display'"), document.fonts.load("800 40px Inter")]); } catch {}
     const cv = $("#cert"), g = cv.getContext("2d"), W = cv.width, H = cv.height;
     g.fillStyle = "#fcfaf8"; g.fillRect(0, 0, W, H);
@@ -404,7 +412,7 @@
     const w = g.measureText("TheJugaad").width; g.fillStyle = "#F2561D"; g.fillText("SRE", 90 + w, 125);
     g.fillStyle = "#6b635d"; g.font = "600 22px Inter, sans-serif"; g.fillText("CERTIFICATE OF COMPLETION", 90, 240);
     g.fillStyle = "#14110f"; g.font = "700 84px 'Playfair Display', Georgia, serif";
-    let name = state.user.name, fs = 84; while (g.measureText(name).width > 900 && fs > 36) { fs -= 4; g.font = `700 ${fs}px 'Playfair Display', Georgia, serif`; }
+    let name = ($("#certName").value || "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, 40) || state.user.name, fs = 84; while (g.measureText(name).width > 900 && fs > 36) { fs -= 4; g.font = `700 ${fs}px 'Playfair Display', Georgia, serif`; }
     g.fillText(name, 90, 360);
     g.fillStyle = "#3a3430"; g.font = "400 30px Inter, sans-serif";
     g.fillText("completed the hands-on lab", 90, 440);
@@ -417,7 +425,7 @@
     g.fillStyle = "#6b635d"; g.font = "600 18px Inter, sans-serif"; g.fillText("TheJugaadWorld - AWS IAM Edition - A game by Shobhit Verma", 90, 800);
     $("#certWrap").style.display = "block";
     $("#certDl").href = cv.toDataURL("image/png");
-    $("#certWrap").scrollIntoView({ behavior: "smooth", block: "center" });
+    if (scroll) $("#certWrap").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   // sign out / switch user (also via ?reset in the URL)

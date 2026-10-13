@@ -402,3 +402,9 @@ footer{background-color:#5a3320}
 .followbox label.follow{display:flex;gap:.7rem;align-items:flex-start;color:#fff;font-weight:600;cursor:pointer;line-height:1.5}
 .followbox label.follow input{width:22px;height:22px;margin-top:.15rem;accent-color:#ffcf33;flex:none;cursor:pointer}
 .followbox label.follow b{color:#ffd166}
+
+.certname{display:block;margin:0 0 1rem}
+.certname span{display:block;font-weight:700;color:#fff;margin-bottom:.35rem}
+.certname input{width:100%;max-width:26rem;padding:.7rem .85rem;border:3px solid var(--ink);border-radius:4px;background:#fffdf6;color:var(--ink);font:600 1rem Inter,sans-serif;box-shadow:4px 4px 0 #000}
+.certname input:focus{outline:3px solid var(--gold)}
+.certname small{display:block;margin-top:.45rem;color:#ffd9c7;font-size:.82rem}

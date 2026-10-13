@@ -9,7 +9,7 @@
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=28">
+<link rel="stylesheet" href="style.css?v=29">
 </head>
 <body>
 
@@ -581,6 +581,9 @@ aws iam simulate-principal-policy \
             <a class="btn ghost sm" id="fIg" href="https://www.instagram.com/thejugaadsre" target="_blank" rel="noopener">Instagram ↗</a></p>
             <label class="follow"><input type="checkbox" id="followChk"><span>I'm following Shobhit Verma on <b>LinkedIn</b> &amp; <b>Instagram</b></span></label>
           </div>
+          <label class="certname" for="certName"><span>Name on your certificate</span>
+            <input type="text" id="certName" maxlength="40" autocomplete="off" placeholder="Your name">
+            <small>Check the spelling. You can edit this before or after you download.</small></label>
           <button class="btn" id="certBtn" disabled>🎓 Generate my certificate</button>
           <div id="certWrap"><canvas id="cert" width="1200" height="850"></canvas>
             <a class="btn ghost" id="certDl" download="TheJugaadSRE-IAM-Certificate.png">Download PNG</a></div>
@@ -598,7 +601,7 @@ aws iam simulate-principal-policy \
   </footer>
 </div>
 
-<script src="config.js?v=28"></script>
-<script src="app.js?v=28"></script>
+<script src="config.js?v=29"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>
