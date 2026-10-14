@@ -296,7 +296,7 @@
     $$(".module").forEach((m, i) => {
       const a = document.createElement("a");
       a.href = "#" + m.id;
-      a.innerHTML = `<span class="dot"></span>${CODE[m.id] || "START"} · ${m.dataset.title}`;
+      a.innerHTML = `<span class="dot"></span>${CODE[m.id] || (m.id === "m0" ? "START" : "💬")} · ${m.dataset.title}`;
       a.onclick = () => toggle(false);
       nav.appendChild(a);
     });
@@ -345,6 +345,7 @@
 
     buildQuiz();
     buildLinks();
+    initFeedback();
     const fc = $("#followChk"); fc.checked = !!state.follow;
     fc.addEventListener("change", () => {
       state.follow = fc.checked; save(); refresh();
@@ -386,6 +387,40 @@
       if (state.quiz[qi] !== undefined) mark(state.quiz[qi]);
       box.appendChild(d);
     });
+  }
+
+
+  // ---------- feedback ----------
+  function initFeedback() {
+    const fb = state.feedback || {};
+    let rating = fb.rating || 0;
+    const moods = $$(".mood"), ta = $("#fbText"), cnt = $("#fbCount"), btn = $("#fbSend"), msg = $("#fbMsg");
+    const paint = () => moods.forEach(b => { const on = +b.dataset.r === rating; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    const count = () => (cnt.textContent = ta.value.length + " / 500");
+    const say = (t, bad) => { msg.textContent = t; msg.classList.toggle("bad", !!bad); };
+    moods.forEach(b => (b.onclick = () => { rating = rating === +b.dataset.r ? 0 : +b.dataset.r; paint(); }));
+    ta.value = fb.comment || ""; ta.oninput = count; count(); paint();
+    if (fb.sent) btn.textContent = "Update feedback ▶";
+
+    btn.onclick = async () => {
+      const comment = ta.value.trim();
+      if (!rating && comment.length < 3) return say("Pick a mood or write a few words first.", true);
+      say(""); busy(btn, true, "Sending…");
+      state.feedback = { rating, comment, sent: false }; save();
+      const r = await api({ type: "feedback", ...payload(), rating, comment });
+      busy(btn, false);
+      if (r && r.ok) {
+        state.feedback.sent = true; save(); btn.textContent = "Update feedback ▶";
+        say("Thank you! 🙌 Your feedback reached Shobhit."); toast("Thanks for the feedback! 🙌"); beep(SND.coin);
+      } else {
+        say("Saved on this device. It will be sent next time you open the page online.");
+      }
+    };
+    // retry a feedback that could not be sent earlier
+    if (fb.sent === false && (fb.rating || fb.comment)) {
+      api({ type: "feedback", ...payload(), rating: fb.rating || 0, comment: fb.comment || "" })
+        .then(r => { if (r && r.ok) { state.feedback.sent = true; save(); btn.textContent = "Update feedback ▶"; } });
+    }
   }
 
   // ---------- links ----------

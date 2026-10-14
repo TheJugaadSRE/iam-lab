@@ -9,8 +9,11 @@
  *   progress  -> updates progress / points / tasks / quiz (creates the row if it is missing)
  *   completed -> same as progress, status becomes "completed"
  *   login     -> email + WhatsApp must match a row; returns profile + saved progress
+ *   feedback  -> one row per student in a "Feedback" tab (created automatically)
  */
 const HEADERS = ["First seen", "Status", "Name", "Email", "WhatsApp", "College", "Year", "LinkedIn", "Consent", "Progress %", "Source", "Last active", "Tasks done", "Points", "Quiz"];
+const FEEDBACK_TAB = "Feedback";
+const FEEDBACK_HEADERS = ["Timestamp", "Name", "Email", "College", "Mood (1-5)", "Comment"];
 const COL = { STATUS: 2, PROGRESS: 10, ACTIVE: 12, TASKS: 13, POINTS: 14, QUIZ: 15 };
 
 function json_(o) {
@@ -31,6 +34,26 @@ function findRow_(sheet, email) {
   }
   return 0;
 }
+// one row per student; sending again updates the same row
+function saveFeedback_(p, email, now) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(FEEDBACK_TAB) || ss.insertSheet(FEEDBACK_TAB, ss.getNumSheets());
+  const head = sh.getRange(1, 1, 1, FEEDBACK_HEADERS.length).getValues()[0];
+  if (head.join("|") !== FEEDBACK_HEADERS.join("|")) sh.getRange(1, 1, 1, FEEDBACK_HEADERS.length).setValues([FEEDBACK_HEADERS]);
+  const rating = Math.max(0, Math.min(5, Number(p.rating) || 0));
+  const comment = String(p.comment || "").slice(0, 600);
+  const rowVals = [now, clean_(p.name), email, clean_(p.college), rating || "", /^[=+\-@]/.test(comment) ? "'" + comment : comment];
+  const last = sh.getLastRow();
+  let row = 0;
+  if (last >= 2) {
+    const emails = sh.getRange(2, 3, last - 1, 1).getValues();
+    for (let i = 0; i < emails.length; i++) if (String(emails[i][0]).trim().toLowerCase() === email) { row = i + 2; break; }
+  }
+  if (row) sh.getRange(row, 1, 1, rowVals.length).setValues([rowVals]);
+  else sh.appendRow(rowVals);
+  return { ok: true, status: row ? "updated" : "new" };
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -45,6 +68,8 @@ function doPost(e) {
     const now = new Date();
     const row = findRow_(sheet, email);
     const type = p.type || "progress";
+
+    if (type === "feedback") return json_(saveFeedback_(p, email, now));
 
     if (type === "login") {
       if (!row || !digits_(p.whatsapp)) return json_({ ok: false });

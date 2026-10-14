@@ -8,6 +8,8 @@ Static site (HTML/CSS/JS). Hosts free on GitHub Pages.
 3. Deploy → New deployment → type **Web app** → Execute as **Me**, access **Anyone** → Deploy → copy the URL.
 4. Paste the URL into `LEAD_ENDPOINT` in `config.js`. Also set `CONTACT_EMAIL` and your social links.
 
+Feedback from the last section of the page lands in a separate **Feedback** tab (created automatically, one row per student).
+
 One row per student (keyed by email). Progress and "completed" status update on the same row. After ANY edit to Code.gs: Deploy > Manage deployments > Edit > New version > Deploy.
 
 ## 2. Publish on GitHub Pages

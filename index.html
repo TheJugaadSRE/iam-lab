@@ -9,7 +9,7 @@
 <meta property="og:description" content="Build, break and fix AWS IAM permissions step by step.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
 
@@ -592,6 +592,26 @@ aws iam simulate-principal-policy \
           <p id="socials"></p>
         </div>
       </section>
+
+      <!-- ===== 11 FEEDBACK ===== -->
+      <section class="module" id="m11" data-title="Your feedback">
+        <span class="tag">Final level · Feedback 💬</span>
+        <h2>How do you feel about the workshop?</h2>
+        <p class="why">Write a few words! A review, a suggestion, a shout-out, anything. It goes straight to Shobhit.</p>
+        <div class="fbk">
+          <div class="moods" role="group" aria-label="How was the workshop?">
+            <button type="button" class="mood" data-r="5" aria-pressed="false">😍<span>Loved it</span></button>
+            <button type="button" class="mood" data-r="4" aria-pressed="false">😀<span>Great</span></button>
+            <button type="button" class="mood" data-r="3" aria-pressed="false">🙂<span>Good</span></button>
+            <button type="button" class="mood" data-r="2" aria-pressed="false">😐<span>Okay</span></button>
+            <button type="button" class="mood" data-r="1" aria-pressed="false">🙁<span>Needs work</span></button>
+          </div>
+          <label class="f" for="fbText">Your words</label>
+          <textarea id="fbText" maxlength="500" rows="5" placeholder="Write a few words about how you feel..."></textarea>
+          <div class="fbrow"><small id="fbCount">0 / 500</small><button class="btn" id="fbSend" type="button">Send feedback ▶</button></div>
+          <p class="fbmsg" id="fbMsg" role="status"></p>
+        </div>
+      </section>
     </main>
   </div>
   <footer>
@@ -601,7 +621,7 @@ aws iam simulate-principal-policy \
   </footer>
 </div>
 
-<script src="config.js?v=29"></script>
-<script src="app.js?v=29"></script>
+<script src="config.js?v=30"></script>
+<script src="app.js?v=30"></script>
 </body>
 </html>
